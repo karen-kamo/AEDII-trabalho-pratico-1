@@ -31,12 +31,12 @@ typedef struct {
   char *nomeLinha;      // string tamanho variável
 } RegistroDado;
 
-// Struct para o Registro de Cabeçalho do Índice
+// Struct para o Registro de Cabeçalho do Índice - 1 byte
 typedef struct {
   char status;  // char de 1 byte
-} RegistrocabecalhoIndice;
+} RegistroCabecalhoIndice;
 
-// Struct para o Registro de Dados do Índice
+// Struct para o Registro de Dados do Índice - 8 bytes
 typedef struct {
   int codEstacao; // int de 4 bytes
   int RRN;        // int de 4 bytes

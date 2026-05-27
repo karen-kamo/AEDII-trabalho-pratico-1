@@ -129,8 +129,9 @@ RegistroDado *ler_reg_dado_bin(FILE* arqBin){
     // pula para 79, pois o primeiro já foi lido
     fseek(arqBin, 79, SEEK_CUR);
 
-    free(r);
-    return NULL;
+    // vai retornar só indicando que está removido
+    // tava devolvendo como NULL, mas tava dando conflito com outras funções
+    return r;
   }
   
   // se não é logicamente removido

@@ -51,9 +51,15 @@ void buscar_todos_reg_bin(){
   while (check_eof(arqBin)){
     RegistroDado *r = ler_reg_dado_bin(arqBin);
 
+    if (r == NULL){ // para caso falte memória
+      break;
+    }
+
     // verificando se o registro está logicamente removido
     // apenas ignora o removido e continua
-    if (r == NULL){
+    if (r->removido == '1'){
+      free_reg_dado(r);
+      free(r);
       continue;
     } 
     
@@ -163,9 +169,15 @@ void buscar_reg_filtro(){
     while (check_eof(arqBin)){
       RegistroDado *r = ler_reg_dado_bin(arqBin);
 
+      if (r == NULL){ // caso falte memória
+        break;
+      }
+
       // verificando se o registro está logicamente removido
       // se for removido, apenas ignora e continua
-      if (r == NULL){
+      if (r->removido == '1'){
+        free_reg_dado(r);
+        free(r);
         continue;
       }
       

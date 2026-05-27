@@ -52,7 +52,7 @@ void escreve_reg_dado_bin(FILE* arq, const RegistroDado* r);
  * 
  * @param hInd É o header que deseja escrever.
  */
-void escreve_reg_cab_ind(FILE* arq, RegistrocabecalhoIndice *hInd);
+void escreve_reg_cab_ind(FILE* arq, RegistroCabecalhoIndice *hInd);
 
 /*!  
  * @brief Escreve um registro de dados em um arquivo de índice.
