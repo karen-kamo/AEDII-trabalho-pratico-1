@@ -75,7 +75,7 @@ void escreve_reg_dado_bin(FILE* arq, const RegistroDado* r){
 
 ////////////////////////////////////////////////////////////////
 
-void escreve_reg_cab_ind(FILE* arq, RegistrocabecalhoIndice *hInd){
+void escreve_reg_cab_ind(FILE* arq, RegistroCabecalhoIndice *hInd){
   // movendo o ponteiro para o início do arquivo
   fseek(arq, 0, SEEK_SET);
 

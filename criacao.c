@@ -188,8 +188,8 @@ void criar_indice(){
   }
 
   // 3. escrever o Registro de Cabeçalho do Índice
-  RegistrocabecalhoIndice *hInd = NULL; // incialização do Registro de cabeçalho de índice
-  hInd = (RegistrocabecalhoIndice *) malloc(sizeof(RegistrocabecalhoIndice)); // alocação do registro de cabeçalho
+  RegistroCabecalhoIndice *hInd = NULL; // incialização do Registro de cabeçalho de índice
+  hInd = (RegistroCabecalhoIndice *) malloc(sizeof(RegistroCabecalhoIndice)); // alocação do registro de cabeçalho
   
   if (hInd == NULL){ // verifica se a alocação não ocorreu
     fclose(arqBin);
@@ -200,7 +200,6 @@ void criar_indice(){
 
   // valor inicial do status deve ser 0
   hInd->status = '0'; // 0 para inconsistente
-
   escreve_reg_cab_ind(arqInd, hInd);
 
   // variáveis para auxiliar no armazenamento em mem. primária e ordenação
@@ -209,19 +208,27 @@ void criar_indice(){
   RegistroDadoIndice *listaIndices = malloc(capacidade * sizeof(RegistroDadoIndice)); // lista dinâmica de reg de dados de índice
   int rrnAtual = 0; 
 
-  if (listaIndices == NULL){
+  if (listaIndices == NULL){ // se n foi alocado corretamente
     fclose(arqBin);
     fclose(arqInd);
     printf("Falha no processamento do arquivo.\n");
     return;
   }
   
+  fseek(arqBin, 17, SEEK_SET); // pulando o Reg de Cabeçalho do bin
+
   // lendo os registros de dados e armazenando os Reg Dado Índice em mem. primária
   while (check_eof(arqBin)){
     RegistroDado *r = ler_reg_dado_bin(arqBin);
 
-    if (r == NULL) {
+    if (r == NULL) { // se n tiver memória
+      break;
+    }
+      
+    if (r->removido == '1'){
       rrnAtual++; // deve incrementar sendo removido ou não
+      free_reg_dado(r);
+      free(r);
       continue; // os removidos devem ser ignorados
     }
     
@@ -232,12 +239,15 @@ void criar_indice(){
     }
 
     // se tem espaço, vai armazenar os valores na struct de reg dados de índice
-    listaIndices[nRegistros].codEstacao = r->codEstacao;
-    listaIndices[nRegistros].RRN = rrnAtual;
-    nRegistros++;
-    rrnAtual++;
+    if (r->codEstacao >= 0 && rrnAtual >= 0){ // n podem ser nulos
+      listaIndices[nRegistros].codEstacao = r->codEstacao;
+      listaIndices[nRegistros].RRN = rrnAtual;
+      nRegistros++;
+      rrnAtual++;
+    }
 
     free_reg_dado(r);
+    free(r);
   }
 
   // 4. ordenar por codEstacao
