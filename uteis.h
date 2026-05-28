@@ -83,4 +83,55 @@ int verificar_nulo_fixo(char *string);
  * @param n Número de registros de dados que tem no vetor.
  */
 void heap (RegistroDadoIndice *array, int n);
+
+
+/*!
+ * @brief Função para carregar os registros de dados em memória primária
+ *
+ * @param nomeArqInd Nome do arquivo de índice
+ * 
+ * @param nRegistros Número de registros de dados que tem no vetor.
+ * 
+ * @return Retorna o ponteiro da memória primária que contém a lista de registros do índice
+ */
+RegistroDadoIndice *carregar_indice_na_memoria (char *nomeArqInd, int *nRegistros);
+
+
+/*!
+ * @brief Função para realizar a busca binária na lista de Registros de Dados do Índice.
+ *
+ * @param n Quantidade de registros.
+ * 
+ * @param codBuscado O codEstacao buscado pelo usuário.
+ * 
+ * @return Retorna o RRN do codEstacao buscado ou -1, caso não encontre.
+ */
+int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado);
+
+
+/*!
+ * @brief Função auxiliar para buscas com filtro, para verificar as buscas filtro a filtro.
+ *
+ * @param r Registro de dado a ser analisado.
+ * 
+ * @param nomesCampos Vetor com os campos a serem buscados.
+ * 
+ * @param valoresCampos Vetor com os valores a serem buscados.
+ * 
+ * @return Retorna 1 caso algum filtro de certo e 0 se não der em algum.
+ */
+int verificacao_filtros(RegistroDado *r, char nomesCampos[100][500], char valoresCampos[100][500], int quantPar);
+
+
+/*!
+ * @brief Função auxiliar para abrir um arquivo binário para leitura e verificar o status do arquivo.
+ *
+ * @param nomeArqBin Nome do arquivo binário
+ * 
+ * @param arq O arquivo binário.
+ * 
+ * @return Retorna o RegistroCabecalho do arquivo binário.
+ */
+RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin);
+
 #endif

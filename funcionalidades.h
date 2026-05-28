@@ -47,4 +47,10 @@ void buscar_reg_cab_bin();
  */
 void criar_indice();
 
+
+/*!
+ * @brief Funcionalidade 6 para mostrar o registro buscado por dados especificados na entrada, caso uma das buscas seja pelo codEstacao, a busca deve ser feita usando o arquivo de índice.
+ *
+ */
+void busca_indexada();
 #endif

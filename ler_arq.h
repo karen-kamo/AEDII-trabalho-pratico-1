@@ -37,4 +37,12 @@ RegistroCabecalho *ler_reg_cab_bin(FILE* arqBin);
  */
 RegistroDado *ler_reg_dado_bin(FILE* arqBin);
 
+/*!
+ * @brief Lê registro de cabeçalho do arquivo de índice e resgata para um registro.
+ *
+ * @param arqInd Arquivo de índice para ser lido. Precisa estar aberto no modo leitura.
+ *
+ * @return Retorna um RegistroCabecalhoIndice com os valores lidos do arquivo de .
+ */
+RegistroCabecalhoIndice *ler_reg_cab_ind(FILE* arqInd);
 #endif

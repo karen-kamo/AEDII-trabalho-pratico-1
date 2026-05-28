@@ -206,4 +206,20 @@ RegistroCabecalho *ler_reg_cab_bin(FILE* arqBin){
   return h;
 }
 
+RegistroCabecalhoIndice *ler_reg_cab_ind(FILE* arqInd){
+  RegistroCabecalhoIndice *hInd = NULL; // incialização do Registro de cab do índice
+
+  // aloca memória para o registro de cabeçalho
+  hInd = (RegistroCabecalhoIndice*) malloc(sizeof(RegistroCabecalhoIndice));
+
+  //verifica se a alocação ocorreu corretamente
+  if (hInd == NULL) return NULL;
+
+  //Lendo cada campo do registro de cabeçalho
+  //Armazenando na struct
+  fread(&hInd->status, sizeof(char), 1, arqInd);
+
+  return hInd;
+}
+
 
