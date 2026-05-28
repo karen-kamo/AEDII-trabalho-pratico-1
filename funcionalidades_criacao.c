@@ -202,6 +202,16 @@ void criar_indice(){
   hInd->status = '0'; // 0 para inconsistente
   escreve_reg_cab_ind(arqInd, hInd);
 
+  // verificar se o arq bin está consistente
+  RegistroCabecalho *h = ler_reg_cab_bin(arqBin);
+  // dá erro caso o ponteiro seja NULL ou o arquivo esteja inconsistente
+  if (h == NULL || h->status == '0') {
+    printf("Falha no processamento do arquivo.\n");
+    fclose(arqBin);
+    fclose(arqInd);
+    return;
+  }
+
   // variáveis para auxiliar no armazenamento em mem. primária e ordenação
   int capacidade = 100; // capacidade inicial
   int nRegistros = 0; // quant de registros não removidos

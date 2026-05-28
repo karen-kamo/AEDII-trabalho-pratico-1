@@ -39,6 +39,10 @@ int main(){
       criar_indice();
       break;
 
+    case 6:
+      busca_indexada();
+      break;
+
     default:
       printf("Opção inválida.\n");
   }

@@ -175,3 +175,162 @@ void heap (RegistroDadoIndice *array, int n){
     heapify(array, 0, i - 1);
   }
 }
+
+///////////////////////////////////////////
+
+RegistroDadoIndice *carregar_indice_na_memoria (char *nomeArqInd, int *nRegistros){
+  // abrir arquivo binário para leitura
+  FILE *arqInd = fopen(nomeArqInd, "rb");
+  if (arqInd == NULL) {
+    printf("Falha no processamento do arquivo.\n");
+    return NULL;
+  }
+
+  // verificando status do reg de cab do índice
+  RegistroCabecalhoIndice *hInd = ler_reg_cab_ind(arqInd);
+  if (hInd == NULL || hInd->status == '0'){
+    printf("Falha no processamento do arquivo.\n");
+    if (hInd != NULL) free(hInd);
+    fclose(arqInd);
+    return NULL;
+  }
+
+  free(hInd); // libera pois já verificou
+
+  // criando vetor dinâmico para armazenar os registros
+  int capacidade = 100;
+  int qtd = 0;
+  RegistroDadoIndice *listaRegistros = malloc(capacidade * sizeof(RegistroDadoIndice));
+  if (listaRegistros == NULL){ // alocação deu errado
+    printf("Falha no processamento do arquivo.\n");
+    fclose(arqInd);
+    return NULL;
+  }
+  
+  fseek(arqInd, 1, SEEK_SET); // pula cabeçalho
+
+  // ler enquanto não acabou o arquivo
+  while(check_eof(arqInd)){
+    // se não tiver mais espaço 
+    if (qtd >= capacidade){
+      capacidade *= 2; // aumentando a capacidade da lista dinâmica
+      RegistroDadoIndice *temp = realloc(listaRegistros, capacidade * sizeof(RegistroDadoIndice));
+      if (temp == NULL){ // se realloc deu errado
+        printf("Falha no processamento do arquivo.\n");
+        free(listaRegistros);
+        fclose(arqInd);
+        return NULL;
+      }
+      listaRegistros = temp; // se deu certo o realloc
+    }
+
+    // leitura direta do Registro de Dado, pois tem tamanho fixo
+    if (fread(&listaRegistros[qtd], sizeof(RegistroDadoIndice), 1, arqInd) == 0) {
+      break;
+    }
+
+    qtd++; // incrementa a quant de reg carregados
+
+  }
+
+  fclose(arqInd);
+
+  *nRegistros = qtd; // deixa armazenado a quant de registros
+
+  return listaRegistros;
+}
+
+//////////////////////////////////////////
+
+int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado){
+  int ini = 0;
+  int fim = n - 1;
+
+  while (ini <= fim){
+    int meio = ini + (fim - ini) / 2;
+
+    if (lista[meio].codEstacao == codBuscado){
+      return lista[meio].RRN;
+    }
+
+    if (lista[meio].codEstacao < codBuscado){
+      ini = meio + 1;
+    } else {
+      fim = meio - 1;
+    }
+  }
+
+  return -1; // se não achou
+}
+
+///////////////////////////////////////////
+
+int verificacao_filtros(RegistroDado *r, char nomesCampos[100][500], char valoresCampos[100][500], int quantPar){
+  // loop para a quantidade de pares que estão armazenados nas arrays
+  for (int b = 0; b < quantPar; b++){
+    if (strcmp(nomesCampos[b], "codEstacao") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->codEstacao) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+
+    // nomeEstacao nçao pode ser nulo
+    else if (strcmp(nomesCampos[b], "nomeEstacao") == 0){ // se o valor da array corresponde ao nome do campo
+      if (strcmp(valoresCampos[b], r->nomeEstacao) != 0) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+
+    else if (strcmp(nomesCampos[b], "codLinha") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->codLinha) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+
+    else if (strcmp(nomesCampos[b], "nomeLinha") == 0){ // se o valor da array corresponde ao nome do campo
+      // se usuário buscou por NULO
+      if (strcmp(valoresCampos[b], "") == 0){
+        // se o registro tem nome, não serve pois é NULO a busca
+        if (r->nomeLinha != NULL) return 0;
+      }
+      // se buscou por um nome real
+      else {
+        if (r->nomeLinha == NULL || strcmp(valoresCampos[b], r->nomeLinha) != 0) // se o valor da array  não corresponde ao valor armazenado na struct ou não possui valor
+          return 0;
+      }
+    }
+
+    else if (strcmp(nomesCampos[b], "codProxEstacao") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->codProxEstacao) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+
+    else if (strcmp(nomesCampos[b], "distProxEstacao") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->distProxEstacao) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+
+    else if (strcmp(nomesCampos[b], "codLinhaIntegra") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->codLinhaIntegra) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+      
+    else if (strcmp(nomesCampos[b], "codEstIntegra") == 0){ // se o valor da array corresponde ao nome do campo
+      if (verificar_nulo(valoresCampos[b]) != r->codEstIntegra) return 0; // se o valor da array  não corresponde ao valor armazenado na struct
+    }
+  }
+  return 1; // se nenhum der return 0, quer dizer que achou
+}
+
+////////////////////////////////////
+
+RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin){
+  // abrir arquivo binário para leitura
+  *arqBin = fopen(nomeArqBin, "rb");
+  if (*arqBin == NULL) {
+    printf("Falha no processamento do arquivo.\n");
+    return NULL;
+  }
+
+  RegistroCabecalho *h = ler_reg_cab_bin(*arqBin);
+  // dá erro caso o ponteiro seja NULL ou o arquivo esteja inconsistente
+  if (h == NULL || h->status == '0') {
+    printf("Falha no processamento do arquivo.\n");
+    if (h != NULL) free_reg_cab(h);
+    fclose(*arqBin);
+    return NULL;
+  }
+
+  return h;
+}
