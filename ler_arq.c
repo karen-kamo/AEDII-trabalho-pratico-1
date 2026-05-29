@@ -185,9 +185,7 @@ RegistroDado *ler_reg_dado_bin(FILE* arqBin){
 
 
 RegistroCabecalho *ler_reg_cab_bin(FILE* arqBin){
-  // função criada, principalmente, para debugar o código
-
-  RegistroCabecalho *h = NULL; // incialização do Registro de dado
+  RegistroCabecalho *h = NULL; // incialização do Registro de cabeçalho
 
   // aloca memória para o registro de cabeçalho
   h = (RegistroCabecalho*) malloc(sizeof(RegistroCabecalho));

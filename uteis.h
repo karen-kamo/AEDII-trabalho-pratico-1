@@ -124,14 +124,44 @@ int verificacao_filtros(RegistroDado *r, char nomesCampos[100][500], char valore
 
 
 /*!
- * @brief Função auxiliar para abrir um arquivo binário para leitura e verificar o status do arquivo.
+ * @brief Função auxiliar para abrir um arquivo binário para o modo desejado e verificar o status do arquivo.
  *
  * @param nomeArqBin Nome do arquivo binário
  * 
- * @param arq O arquivo binário.
+ * @param arqBin O arquivo binário.
+ * 
+ * @param modo O modo de abertura do arquivo.
  * 
  * @return Retorna o RegistroCabecalho do arquivo binário.
  */
-RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin);
+RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin, char modo[3]);
 
+
+/*!
+ * @brief Função auxiliar para abrir um arquivo de índice para o modo desejado e verificar o status do arquivo.
+ *
+ * @param nomeArqInd Nome do arquivo de índice
+ * 
+ * @param arqInd O arquivo de índice.
+ * 
+ * @param modo O modo de abertura do arquivo.
+ * 
+ * @return Retorna o RegistroCabecalho do arquivo binário.
+ */
+RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, char modo[3]);
+
+
+
+/*!
+ * @brief Função auxiliar que faz a busca binária tradicional, retorna a posição ocupada pelo registro na lista do índice na memória.
+ *
+ * @param listaIndice Lista dinâmica do índice.
+ * 
+ * @param nRegistrosIndice Número de registros.
+ * 
+ * @param codBuscado O codEstacao buscado.
+ * 
+ * @return Retorna a posição do registro buscado na lista de índices da memória. O outro retorna o RRN.
+ */
+int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado);
 #endif
