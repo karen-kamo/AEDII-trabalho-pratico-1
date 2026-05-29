@@ -313,11 +313,11 @@ int verificacao_filtros(RegistroDado *r, char nomesCampos[100][500], char valore
   return 1; // se nenhum der return 0, quer dizer que achou
 }
 
-////////////////////////////////////
+//////////////////////////////////////////
 
-RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin){
-  // abrir arquivo binário para leitura
-  *arqBin = fopen(nomeArqBin, "rb");
+RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin, char modo[3]){
+  // abrir arquivo binário para o modo desejado
+  *arqBin = fopen(nomeArqBin, modo);
   if (*arqBin == NULL) {
     printf("Falha no processamento do arquivo.\n");
     return NULL;
@@ -333,4 +333,48 @@ RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin){
   }
 
   return h;
+}
+
+/////////////////////////////////////////////////////
+
+RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, char modo[3]){
+  // abrir arquivo de índice para o modo desejado
+  *arqInd = fopen(nomeArqInd, modo);
+  if (*arqInd == NULL) {
+    printf("Falha no processamento do arquivo.\n");
+    return NULL;
+  }
+
+  RegistroCabecalhoIndice *hInd = ler_reg_cab_ind(*arqInd);
+  // dá erro caso o ponteiro seja NULL ou o arquivo esteja inconsistente
+  if (hInd == NULL || hInd->status == '0') {
+    printf("Falha no processamento do arquivo.\n");
+    if (hInd != NULL) free(hInd);
+    fclose(*arqInd);
+    return NULL;
+  }
+
+  return hInd;
+}
+
+/////////////////////////////////////////////
+
+int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado) {
+    int esq = 0;
+    int dir = nRegistrosIndice - 1;
+
+    while (esq <= dir) {
+        int meio = esq + (dir - esq) / 2;
+
+        if (listaIndice[meio].codEstacao == codBuscado) {
+            return meio; // encontrou a posição exata no vetor
+        }
+
+        if (listaIndice[meio].codEstacao < codBuscado) {
+            esq = meio + 1;
+        } else {
+            dir = meio - 1;
+        }
+    }
+    return -1; // caso não encontre, mas deve achar, pois encontrou no arquivo binário
 }

@@ -53,4 +53,25 @@ void criar_indice();
  *
  */
 void busca_indexada();
+
+
+/*!
+ * @brief Função para realizar a busca indexada. Irá ser utilizada nas funcionalidades 6 e 7.
+ *
+ * @param listaIndice Lista de registros do índice que está na memória.
+ * 
+ * @param nRegistrosIndice O número de registros no arquivo de índice.
+ * 
+ * @param h O Registro de Cabecalho do arquivo binário.
+ * 
+ * @param arqBin O arquivo binário.
+ * 
+ * @param posSequencial A posição atual para realizar a busca no arquivo binário.
+ * 
+ * @return Retorna RRN do registro buscado ou -1 se não tiver registro correspondente.
+ */
+int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial);
+
+void remover_registro();
+
 #endif

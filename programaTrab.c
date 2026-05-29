@@ -43,6 +43,10 @@ int main(){
       busca_indexada();
       break;
 
+    case 7:
+      remover_registro();
+      break;
+
     default:
       printf("Opção inválida.\n");
   }
