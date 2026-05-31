@@ -54,6 +54,12 @@ void criar_indice();
  */
 void busca_indexada();
 
+/*!
+* @brief Funcionalidade 8 para inserir novos registros e atualizar o índice
+*
+*/
+void inserir_reg();
+
 
 /*!
  * @brief Função para realizar a busca indexada. Irá ser utilizada nas funcionalidades 6 e 7.
