@@ -141,3 +141,95 @@ void inserir_reg() {
     BinarioNaTela(nomeArqBin);
     BinarioNaTela(nomeArqInd);
 }
+
+/* ================================================================================
+
+******************************FUNCIONALIDADE 9************************************
+
+===================================================================================*/ 
+
+//Procura e muda dados existentes
+
+void atualizar_reg() {
+    char nomeArqDados[100];
+    char nomeArqIndice[100];
+    int n;
+
+    // Passo 1: Leitura inicial
+    scanf("%s %s %d", nomeArqDados, nomeArqIndice, &n);
+
+    FILE *arqBin = NULL;
+    FILE *arqInd = NULL;
+
+    // Passo 2: Abertura e Validação
+    RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+");
+    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+");
+
+    if (h == NULL || hInd == NULL) {
+        if (arqBin) fclose(arqBin);
+        if (arqInd) fclose(arqInd);
+        return;
+    }
+
+    // Passo 3: Proteção de Status
+    h->status = '0';
+    hInd->status = '0';
+    
+    fseek(arqBin, 0, SEEK_SET);
+    escreve_reg_cab_bin(arqBin, h);
+    
+    fseek(arqInd, 0, SEEK_SET);
+    escreve_reg_cab_ind(arqInd, hInd);
+
+    int nRegistrosIndice = h->nroEstacoes;
+    int capTotal = nRegistrosIndice + n;
+    RegistroDadoIndice * listaIndice = malloc(capTotal * sizeof(RegistroDadoIndice));
+
+    for (int i =0; i < nRegistrosIndice; i++){
+      fread(&listaIndice[i], sizeof(RegistroDadoIndice), 1, arqInd);
+    }
+
+   for (int i =0; i < n; i++){
+      //qual é o rrn que está a estação filtrada?
+      int posSequencial = 17;
+      int rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
+
+      int quantAlt; //quantidades de alterações que serão executadas
+      scanf("%d", &quantAlt); 
+      //ex: 1 codEstacao 15
+      // quantAlt = 1, muda o código da estação para 15
+
+      //matrizes para armazenar as novas atualizações
+      char nomeCampoNew[100][500]; // armazena os campos que foram alterados
+      char valorCampoNew[100][500]; //armazena os valores que foram alterados
+      //ex: nomeCampoNew = codEstacao e 15 = valorCampoNew
+
+      for (int j=0; j < quantAlt; j++){
+         scanf("%s", nomeCampoNew[j]);
+         scanf(" \"%[^\"]\"", valorCampoNew[j]);
+      }
+
+      //achei o rrn
+      //alterar o arquivo binário
+      if (rrnEncontrado != -1){
+         //calculando a pos do reg de dados
+         long byteOffset = 17 + (rrnEncontrado * 80);
+         fseek(arqBin, byteOffset, SEEK_SET);
+
+         RegistroDado*r = ler_reg_dado_bin(arqBin);
+
+         //o número de alterações armazenadas será rodada no loop
+         for (int j=0; j < quantAlt; j++){
+            
+         }
+         // volta a posição e grava a struct por cima
+        fseek(arqBin, byteOffset, SEEK_SET);
+        escreve_reg_dado_bin(arqBin, r); // Função de escrita de vocês!
+
+        //liberando na memória
+        free_reg_dado(r);
+        free(r);
+      }
+
+   }
+}

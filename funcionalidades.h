@@ -60,6 +60,12 @@ void busca_indexada();
 */
 void inserir_reg();
 
+/*!
+* @brief Funcionalidade 9 para buscar e atualizar os registros apontados
+*
+*/
+void atualizar_reg();
+
 
 /*!
  * @brief Função para realizar a busca indexada. Irá ser utilizada nas funcionalidades 6 e 7.
