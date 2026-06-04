@@ -72,18 +72,13 @@ void buscar_reg_cab_bin(){
   char nomeArqBin[100];
   scanf("%s", nomeArqBin);
 
-  // abrir arquivo binário para leitura
-  FILE *arqBin = fopen(nomeArqBin, "rb");
-  if (arqBin == NULL) {
-    printf("Falha no processamento do arquivo.\n");
-    return;
-  }
+  FILE *arqBin = NULL; // inicializa o ponteiro
+  RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqBin, &arqBin, "rb");
+  if (h == NULL) return; // se der errado, só para
 
   // mover cursor para o início do arquivo
   fseek(arqBin, 0, SEEK_SET);
 
-  RegistroCabecalho *h = ler_reg_cab_bin(arqBin);
-  if (h == NULL) printf("Falha no processamento do arquivo.\n");
   imprimir_reg_cab(h);
 
   free_reg_cab(h);

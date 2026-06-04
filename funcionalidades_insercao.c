@@ -137,9 +137,9 @@ void inserir_reg() {
     // 8. Desalocar memórias e fechar arquivos (fclose)
 
 
-    // 9. Chamar o BinarioNaTela para ambos os arquivos
-    BinarioNaTela(nomeArqBin);
-    BinarioNaTela(nomeArqInd);
+   // 9. Chamar o BinarioNaTela para ambos os arquivos
+   BinarioNaTela(nomeArqBin);
+   BinarioNaTela(nomeArqInd);
 }
 
 /* ================================================================================
@@ -217,7 +217,7 @@ void atualizar_reg() {
          RegistroDado*r = ler_reg_dado_bin(arqBin);
 
          //o número de alterações armazenadas será rodada no loop da função
-         atualizar_reg(r, nomeCampoNew, valorCampoNew, quantAlt, listaIndice, nRegistrosIndice);
+         atualizar_reg_pelo_filtro(r, nomeCampoNew, valorCampoNew, quantAlt, listaIndice, nRegistrosIndice);
 
          // volta a posição e grava a struct por cima
          // fseek(arqBin, byteOffset, SEEK_SET);
@@ -227,6 +227,16 @@ void atualizar_reg() {
          free_reg_dado(r);
          free(r);
       }
+   }
 
-}
+   // 9. Liberações de memória e fechamento
+  free(listaIndice);
+  free(h);
+  free(hInd);
+  fclose(arqBin);
+  fclose(arqInd);
+
+   // 9. Chamar o BinarioNaTela para ambos os arquivos
+   BinarioNaTela(nomeArqDados);
+   BinarioNaTela(nomeArqIndice);
 }
