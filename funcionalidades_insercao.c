@@ -19,127 +19,175 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 ******************************FUNCIONALIDADE 8************************************
 
 ===================================================================================*/ 
-/* Funcionalidade [8]: Inserção de Registros e Atualização de Índice Primário
-
-   1. Ler os argumentos da linha de comando/stdin:
-      - Nome do arquivo de dados (ex: estacao.bin)
-      - Nome do arquivo de índice (ex: indexaEstacao.bin)
-      - Número de inserções 'n'
-
-   2. Abrir os arquivos no modo de leitura e escrita binária ("rb+"):
-      - Se algum arquivo não existir, tratar o erro ("Falha no processamento do arquivo.")
-
-   3. Validar e carregar o Índice Primário para a Memória RAM:
-      - Ler o cabeçalho do arquivo de índice e verificar o status ('1' = consistente)
-      - Mudar o status nos cabeçalhos de ambos os arquivos para '0' (inconsistente) e gravar no disco
-      - Carregar todas as chaves e offsets do arquivo de índice para um array dinâmico (RAM)
-
-   4. Loop de Inserções (executar 'n' vezes):
-      a. Ler os campos da estação do stdin (tratar aspas de strings e a palavra "NULO")
-      b. Ir para o final do arquivo de dados utilizando fseek(..., 0, SEEK_END)
-      c. Obter o Byte Offset atual utilizando ftell(...)
-      d. Montar a struct do registro com os dados lidos e gravá-la no arquivo de dados (fwrite)
-      e. Adicionar a nova chave (codEstacao) e o Byte Offset obtido no nosso array de índices na RAM
-
-   5. Finalizar e Ordenar o Índice na RAM:
-      - Ordenar o array de índices pelo 'codEstacao' (usando a função qsort do C)
-
-   6. Gravar o Índice Atualizado de Volta no Disco:
-      - Dar um fseek para o início do arquivo de índice
-      - Atualizar o cabeçalho do índice (mudar status para '1' e atualizar contadores)
-      - Gravar o array ordenado por cima do arquivo anterior
-
-   7. Fechar o Arquivo de Dados de forma Consistente:
-      - Atualizar o status do cabeçalho do arquivo de dados para '1'
-      - Fechar ambos os arquivos (fclose)
-
-   8. Chamar o BinarioNaTela para ambos os arquivos atualizados. */
-
 void inserir_reg() {
-    char nomeArqBin[100];
-    char nomeArqInd[100];
+
+    char nomeArqDados[100];
+    char nomeArqIndice[100];
     int n;
 
-    // 1. Ler as entradas iniciais 
-    scanf("%s %s %d", nomeArqBin, nomeArqInd, &n);
+    scanf("%s", nomeArqDados);
+    scanf("%s", nomeArqIndice);
+    if (scanf("%d", &n) != 1) return;
 
-    // Ponteiros 
     FILE *arqBin = NULL;
+    RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+");
+    if (h == NULL) return; 
+
     FILE *arqInd = NULL;
-
-    // 2. Abrir e validar os arquivos existentes
-    RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqBin, &arqBin, "rb+");
-    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqInd, &arqInd, "rb+");
-
-    if (h == NULL || hInd == NULL) {
-        if (arqBin) fclose(arqBin);
-        if (arqInd) fclose(arqInd);
+    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+");
+    if (hInd == NULL) {
+        free_reg_cab(h);
+        fclose(arqBin);
         return;
     }
 
-    // 3. Mudar o status dos cabeçalhos para '0' (inconsistente) e gravar no disco
+    // Mudar o status de ambos para inconsistente ('0') no início
     h->status = '0';
-    hInd->status = '0';
-    // [Escreva aqui as funções para salvar h e hInd no início dos arquivos]
-
     fseek(arqBin, 0, SEEK_SET);
-    escreve_reg_cab_bin(arqBin, h);
+    fwrite(&h->status, sizeof(char), 1, arqBin);
 
+    hInd->status = '0';
     fseek(arqInd, 0, SEEK_SET);
-    escreve_reg_cab_ind(arqInd, hInd);
+    fwrite(&hInd->status, sizeof(char), 1, arqInd);
 
-    // 4. Carregar o índice atual que está no arquivo para a memória RAM
-    // [Adicione aqui a lógica ou função para ler os índices do arquivo para a RAM]
-    int nRegistrosIndice = h->nroEstacoes;
-    int capTotal =  nRegistrosIndice + n;
-    RegistroDadoIndice *listaIndice = malloc(capTotal *sizeof(RegistroDadoIndice));
+    int nRegistrosIndice = 0;
 
-    // fseek(arqInd, 0, SEEK_SET);
-    // long tamArq = ftell(arqInd);
-    //sem fseek
-
-    for (int i = 0; i < nRegistrosIndice; i++) {
-        fread(&listaIndice[i], sizeof(RegistroDadoIndice), 1, arqInd);
+    fclose(arqInd); 
+    RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqIndice, &nRegistrosIndice);
+    if (listaIndice == NULL) {
+        free_reg_cab(h);
+        fclose(arqBin);
+        return;
     }
+    // Reabrimos o arquivo de índice em modo de escrita/atualização binária
+    arqInd = fopen(nomeArqIndice, "rb+");
 
-    long byteOffSetInicial = 17 + (h->proxRRN * 80);
-    fseek(arqBin, byteOffSetInicial, SEEK_SET);
+    // Redimensionamos a lista para aguentar os novos 'n' registros que vão entrar
+    listaIndice = realloc(listaIndice, (nRegistrosIndice + n) * sizeof(RegistroDadoIndice));
 
-    // 5. Loop para realizar as 'n' inserções
+    // loop de inserções
+    char buffer[500];
     for (int i = 0; i < n; i++) {
-            RegistroDado r;
+        RegistroDado *r = malloc(sizeof(RegistroDado));
 
-        // a. Ler os campos do teclado (stdin) tratando "NULO" e usando ScanQuoteString
+        // leitura de dados pelo teclado
+        // codEstacao 
+        ScanQuoteString(buffer);
+        r->codEstacao = atoi(buffer);
+
+        // nomeEstacao
+        ScanQuoteString(buffer);
+        if (strcmp(buffer, "") == 0) {
+            r->nomeEstacao = NULL;
+            r->tamNomeEstacao = 0;
+        } else {
+            r->nomeEstacao = malloc((strlen(buffer) + 1) * sizeof(char));
+            strcpy(r->nomeEstacao, buffer);
+            r->tamNomeEstacao = strlen(buffer);
+        }
+
+        // codLinha
+        ScanQuoteString(buffer);
+        r->codLinha = verificar_nulo(buffer);
+
+        // nomeLinha
+        ScanQuoteString(buffer);
+        if (strcmp(buffer, "") == 0) {
+            r->nomeLinha = NULL;
+            r->tamNomeLinha = 0;
+        } else {
+            r->nomeLinha = malloc((strlen(buffer) + 1) * sizeof(char));
+            strcpy(r->nomeLinha, buffer);
+            r->tamNomeLinha = strlen(buffer);
+        }
+
+        // codProxEstacao
+        ScanQuoteString(buffer);
+        r->codProxEstacao = verificar_nulo(buffer);
+
+        // distProxEstacao
+        ScanQuoteString(buffer);
+        r->distProxEstacao = verificar_nulo(buffer);
+
+        // codLinhaIntegra
+        ScanQuoteString(buffer);
+        r->codLinhaIntegra = verificar_nulo(buffer);
+
+        // codEstIntegra
+        ScanQuoteString(buffer);
+        r->codEstIntegra = verificar_nulo(buffer);
+
+        // escrita do arquivo de dados
+        int rrnDestino;
         
-        // b. Descobrir a posição de escrita baseada no h->proxRRN
-        // Fórmula: byte_offset = 17 + (h->proxRRN * 80)
-        
-        // c. Usar fseek para ir até a posição e escreve_reg_dado_bin para salvar no arquivo
-        
-        // d. Adicionar a nova chave (codEstacao) e o RRN usado no seu array de índices na RAM
-        
-        // e. Atualizar os contadores do cabeçalho de dados na RAM (proxRRN e nroEstacoes)
-        // f. Limpar as strings alocadas para 'r' usando free_reg_dado(&r)
+        if (h->topo == -1) {
+            // pilha vazia, escreve no fim do arquivo
+            rrnDestino = h->proxRRN;
+            long byteOffset = 17 + (rrnDestino * 80);
+            fseek(arqBin, byteOffset, SEEK_SET);
+            
+            escreve_reg_dado_bin(arqBin, r);
+            
+            h->proxRRN++; // Incrementa o próximo RRN disponível
+        } else {
+            //reaproveita espaço da pilha
+            rrnDestino = h->topo;
+            long byteOffset = 17 + (rrnDestino * 80);
+            
+            // Vamos até o prox da pilha
+            fseek(arqBin, byteOffset, SEEK_SET);
+            char removido;
+            int proximoPilha;
+            fread(&removido, sizeof(char), 1, arqBin);
+            fread(&proximoPilha, sizeof(int), 1, arqBin);
+            
+            // Voltamos ao início do espaço e gravamos o registro novo por cima
+            fseek(arqBin, byteOffset, SEEK_SET);
+            escreve_reg_dado_bin(arqBin, r);
+            
+            // Atualizamos o topo da pilha com o encadeamento que coletamos
+            h->topo = proximoPilha;
+        }
+
+        listaIndice[nRegistrosIndice].codEstacao = r->codEstacao;
+        listaIndice[nRegistrosIndice].RRN = rrnDestino;
+        nRegistrosIndice++;
+
+        h->nroEstacoes++;
+        if (r->codEstIntegra != -1) {
+            h->nroParesEstacoes++;
+        }
+
+        free_reg_dado(r);
+        free(r);
     }
 
+    // mudanças no arquivo de índice
+    heap(listaIndice, nRegistrosIndice);
 
-    // 6. Ordenar a lista de índices na RAM
-    // Dica: Vocês já têm a função heap(lista, tamanho) pronta no projeto!
+    // Grava o cabeçalho do índice atualizado
+    fseek(arqInd, 0, SEEK_SET);
+    char statusConsistente = '1';
+    fwrite(&statusConsistente, sizeof(char), 1, arqInd);
 
+    // Grava todos os dados ordenados no arquivo de índices
+    for (int i = 0; i < nRegistrosIndice; i++) {
+        fwrite(&listaIndice[i], sizeof(RegistroDadoIndice), 1, arqInd);
+    }
 
-    // 7. Salvar tudo e fechar com consistência
+    // mudanças no registro de cabeçalho
     h->status = '1';
-    hInd->status = '1';
+    fseek(arqBin, 0, SEEK_SET);
+    escreve_reg_cab_bin(arqBin, h); 
 
-    // a. Gravar o cabeçalho de dados atualizado no início do arquivo de dados
-    // b. Limpar o arquivo de índice antigo (reabrir com "wb"), gravar o hInd e depois a lista da RAM ordenada
-    
-    // 8. Desalocar memórias e fechar arquivos (fclose)
+    free(listaIndice);
+    free_reg_cab(h);
+    fclose(arqBin);
+    fclose(arqInd);
 
-
-   // 9. Chamar o BinarioNaTela para ambos os arquivos
-   BinarioNaTela(nomeArqBin);
-   BinarioNaTela(nomeArqInd);
+   //binário na tela
+    BinarioNaTela(nomeArqDados);
+    BinarioNaTela(nomeArqIndice);
 }
 
 /* ================================================================================
