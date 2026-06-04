@@ -172,3 +172,4 @@ int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nReg
 * @param 
 *
 */
+void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice);

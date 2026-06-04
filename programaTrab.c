@@ -46,6 +46,10 @@ int main(){
     case 7:
       remover_registro();
       break;
+    
+    case 9:
+      atualizar_reg();
+      break;
 
     default:
       printf("Opção inválida.\n");

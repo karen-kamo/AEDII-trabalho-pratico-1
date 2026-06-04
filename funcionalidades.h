@@ -55,6 +55,12 @@ void criar_indice();
 void busca_indexada();
 
 /*!
+ * @brief Funcionalidade 7 realizar a remoção lógica do registro de dado desejado tanto na arquivo de dados quanto no arquivo de índice.
+ *
+ */
+void remover_registro();
+
+/*!
 * @brief Funcionalidade 8 para inserir novos registros e atualizar o índice
 *
 */
@@ -68,7 +74,7 @@ void atualizar_reg();
 
 
 /*!
- * @brief Função para realizar a busca indexada. Irá ser utilizada nas funcionalidades 6 e 7.
+ * @brief Função para realizar a busca indexada. Irá ser utilizada em várias funcionalidades, por isso, fiz só a busca em uma função a parte.
  *
  * @param listaIndice Lista de registros do índice que está na memória.
  * 
@@ -84,6 +90,6 @@ void atualizar_reg();
  */
 int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial);
 
-void remover_registro();
+
 
 #endif

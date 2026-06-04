@@ -381,7 +381,7 @@ int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nReg
 
 //////////////////////////////////////////////
 
-void atualizar_reg(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice) {
+void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice) {
     
     //loop para a quantidade de alterações proposta pelo usuário. 
     for (int b = 0; b < quantAlt; b++) {
