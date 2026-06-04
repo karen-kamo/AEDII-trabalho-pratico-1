@@ -277,14 +277,38 @@ void atualizar_reg() {
       }
    }
 
-   // 9. Liberações de memória e fechamento
-  free(listaIndice);
-  free(h);
-  free(hInd);
-  fclose(arqBin);
-  fclose(arqInd);
+   // ============================================================
+   // CORREÇÃO: SALVAR OS ARQUIVOS DE VERDADE ANTES DE FECHAR TUDO
+   // ============================================================
 
-   // 9. Chamar o BinarioNaTela para ambos os arquivos
-   BinarioNaTela(nomeArqDados);
-   BinarioNaTela(nomeArqIndice);
+   // 1. Garantir que o índice na RAM está perfeitamente ordenado (caso chaves mudaram)
+   heap(listaIndice, nRegistrosIndice); 
+
+   // 2. Voltar ao início do arquivo de índice para reescrever
+   fseek(arqInd, 0, SEEK_SET);
+   
+   // Gravar o cabeçalho do índice como consistente ('1')
+   hInd->status = '1';
+   fwrite(&hInd->status, sizeof(char), 1, arqInd);
+
+   // Gravar a lista de registros atualizada logo após o cabeçalho
+   for (int k = 0; k < nRegistrosIndice; k++) {
+      fwrite(&listaIndice[k], sizeof(RegistroDadoIndice), 1, arqInd);
+   }
+
+   // 3. Voltar ao início do arquivo de dados para salvar o cabeçalho definitivo
+   h->status = '1'; // Consistente
+   fseek(arqBin, 0, SEEK_SET);
+   escreve_reg_cab_bin(arqBin, h); 
+
+   // 4. Agora sim, liberações de memória e fechamento seguros
+   free(listaIndice);
+   free(h);
+   free(hInd);
+   fclose(arqBin);
+   fclose(arqInd);
+
+   // 5. Chamar o BinarioNaTela para ambos os arquivos
+   BinarioNaTela(nomeArqDados); 
+   BinarioNaTela(nomeArqIndice); 
 }
