@@ -165,3 +165,10 @@ RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, c
  */
 int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado);
 #endif
+
+/*!
+* @brief Função para facilitar a atualização da Registro de Dados, modificado pelo usuário.
+*
+* @param 
+*
+*/

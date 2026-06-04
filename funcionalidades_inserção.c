@@ -151,43 +151,41 @@ void inserir_reg() {
 //Procura e muda dados existentes
 
 void atualizar_reg() {
-    char nomeArqDados[100];
-    char nomeArqIndice[100];
-    int n;
+   char nomeArqDados[100];
+   char nomeArqIndice[100];
+   int n;
 
-    // Passo 1: Leitura inicial
-    scanf("%s %s %d", nomeArqDados, nomeArqIndice, &n);
+   // Passo 1: Leitura inicial
+   scanf("%s %s %d", nomeArqDados, nomeArqIndice, &n);
 
-    FILE *arqBin = NULL;
-    FILE *arqInd = NULL;
+   FILE *arqBin = NULL;
+   FILE *arqInd = NULL;
 
-    // Passo 2: Abertura e Validação
-    RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+");
-    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+");
+   // Passo 2: Abertura e Validação
+   RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+");
 
-    if (h == NULL || hInd == NULL) {
-        if (arqBin) fclose(arqBin);
-        if (arqInd) fclose(arqInd);
-        return;
-    }
+   int nRegistrosIndice = 0; // para guardar quant de regs
+   RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqIndice, &nRegistrosIndice);
+   if (listaIndice == NULL){ // se deu errado
+   free_reg_cab(h);
+   fclose(arqBin);
+   return; // quer dizer que não tem os regs 
+   }
 
-    // Passo 3: Proteção de Status
-    h->status = '0';
-    hInd->status = '0';
-    
-    fseek(arqBin, 0, SEEK_SET);
-    escreve_reg_cab_bin(arqBin, h);
-    
-    fseek(arqInd, 0, SEEK_SET);
-    escreve_reg_cab_ind(arqInd, hInd);
+   RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+");
 
-    int nRegistrosIndice = h->nroEstacoes;
-    int capTotal = nRegistrosIndice + n;
-    RegistroDadoIndice * listaIndice = malloc(capTotal * sizeof(RegistroDadoIndice));
+   if (h == NULL || hInd == NULL) {
+      if (arqBin) fclose(arqBin);
+      if (arqInd) fclose(arqInd);
+      return;
+   }
 
-    for (int i =0; i < nRegistrosIndice; i++){
-      fread(&listaIndice[i], sizeof(RegistroDadoIndice), 1, arqInd);
-    }
+   // Passo 3: Proteção de Status
+   h->status = '0';
+   hInd->status = '0';
+   
+   escreve_reg_cab_bin(arqBin, h);    
+   escreve_reg_cab_ind(arqInd, hInd);
 
    for (int i =0; i < n; i++){
       //qual é o rrn que está a estação filtrada?
@@ -218,18 +216,17 @@ void atualizar_reg() {
 
          RegistroDado*r = ler_reg_dado_bin(arqBin);
 
-         //o número de alterações armazenadas será rodada no loop
-         for (int j=0; j < quantAlt; j++){
-            
-         }
-         // volta a posição e grava a struct por cima
-        fseek(arqBin, byteOffset, SEEK_SET);
-        escreve_reg_dado_bin(arqBin, r); // Função de escrita de vocês!
+         //o número de alterações armazenadas será rodada no loop da função
+         atualizar_reg(r, nomeCampoNew, valorCampoNew, quantAlt, listaIndice, nRegistrosIndice);
 
-        //liberando na memória
-        free_reg_dado(r);
-        free(r);
+         // volta a posição e grava a struct por cima
+         // fseek(arqBin, byteOffset, SEEK_SET);
+         escreve_reg_dado_bin(arqBin, r); // Escreve no binário
+
+         //liberando na memória
+         free_reg_dado(r);
+         free(r);
       }
 
-   }
+}
 }
