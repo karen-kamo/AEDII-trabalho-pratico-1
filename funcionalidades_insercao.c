@@ -20,174 +20,166 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 
 ===================================================================================*/ 
 void inserir_reg() {
+   char nomeArqDados[100];
+   char nomeArqIndice[100];
+   int nInsercao; // quant de inserções que serão feitas
 
-    char nomeArqDados[100];
-    char nomeArqIndice[100];
-    int n;
+   scanf("%s %s %d", nomeArqDados, nomeArqIndice, &nInsercao);
 
-    scanf("%s", nomeArqDados);
-    scanf("%s", nomeArqIndice);
-    if (scanf("%d", &n) != 1) return;
+   // 1. Abrir o arquivo binário para escrita e leitura
+   FILE *arqBin = NULL; // inicializa o ponteiro
+   RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+"); // para leitura e escrita
+   if (h == NULL) return; // se der errado, só para
 
-    FILE *arqBin = NULL;
-    RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqDados, &arqBin, "rb+");
-    if (h == NULL) return; 
+   // 2. Carrega o índice para a RAM - fiz primeiro, pois abre e fecha arq na função de carregar
+   int nRegistrosIndice = 0; // para guardar quant de regs
+   RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqIndice, &nRegistrosIndice);
+   if (listaIndice == NULL){ // se deu errado
+      free_reg_cab(h);
+      fclose(arqBin);
+      return; // quer dizer que não tem os regs 
+   }
 
-    FILE *arqInd = NULL;
-    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+");
-    if (hInd == NULL) {
-        free_reg_cab(h);
-        fclose(arqBin);
-        return;
-    }
+   // 3. Abrir o arquivo de índice para escrita e leitura
+   FILE *arqInd = NULL; // inicializa o ponteiro
+   RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+"); // para leitura e escrita
+   if (hInd == NULL) return; // se der errado, só para
 
-    // Mudar o status de ambos para inconsistente ('0') no início
-    h->status = '0';
-    fseek(arqBin, 0, SEEK_SET);
-    fwrite(&h->status, sizeof(char), 1, arqBin);
+   // 4. Mudar status dos arquivos
+   h->status = '0';
+   escreve_reg_cab_bin(arqBin, h);
 
-    hInd->status = '0';
-    fseek(arqInd, 0, SEEK_SET);
-    fwrite(&hInd->status, sizeof(char), 1, arqInd);
+   hInd->status = '0';
+   escreve_reg_cab_ind(arqInd, hInd);
 
-    int nRegistrosIndice = 0;
+   char buffer[1000]; // para guardar os strings digitados
 
-    fclose(arqInd); 
-    RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqIndice, &nRegistrosIndice);
-    if (listaIndice == NULL) {
-        free_reg_cab(h);
-        fclose(arqBin);
-        return;
-    }
-    // Reabrimos o arquivo de índice em modo de escrita/atualização binária
-    arqInd = fopen(nomeArqIndice, "rb+");
+   // loop de inserções
+   for (int i = 0; i < nInsercao; i++) {
+      // 5. Pegar os valores para inserção
+      RegistroDado *r = (RegistroDado *) malloc(sizeof(RegistroDado));
 
-    // Redimensionamos a lista para aguentar os novos 'n' registros que vão entrar
-    listaIndice = realloc(listaIndice, (nRegistrosIndice + n) * sizeof(RegistroDadoIndice));
+      // leitura de dados pelo teclado para cada campo
+      // codEstacao - lê para ver se é NULO, se não vai guardar o valor
+      scanf("%s", buffer); // se é int, usa scanf
+      r->codEstacao = verificar_nulo(buffer);
 
-    // loop de inserções
-    char buffer[500];
-    for (int i = 0; i < n; i++) {
-        RegistroDado *r = malloc(sizeof(RegistroDado));
+      // nomeEstacao - se é um valor para campo de tamanho variável usa ScanQuoteString
+      ScanQuoteString(buffer);
+      if (strcmp(buffer, "NULO") == 0) { // se é NULO
+         r->nomeEstacao = NULL;
+         r->tamNomeEstacao = 0;
+      } else {
+         r->nomeEstacao = malloc((strlen(buffer) + 1) * sizeof(char));
+         strcpy(r->nomeEstacao, buffer);
+         r->tamNomeEstacao = strlen(buffer);
+      }
 
-        // leitura de dados pelo teclado
-        // codEstacao 
-        ScanQuoteString(buffer);
-        r->codEstacao = atoi(buffer);
+      // codLinha - lê para ver se é NULO, se não vai guardar o valor
+      scanf("%s", buffer); // se é int, usa scanf
+      r->codLinha = verificar_nulo(buffer);
 
-        // nomeEstacao
-        ScanQuoteString(buffer);
-        if (strcmp(buffer, "") == 0) {
-            r->nomeEstacao = NULL;
-            r->tamNomeEstacao = 0;
-        } else {
-            r->nomeEstacao = malloc((strlen(buffer) + 1) * sizeof(char));
-            strcpy(r->nomeEstacao, buffer);
-            r->tamNomeEstacao = strlen(buffer);
-        }
+      // nomeLinha - se é um valor para campo de tamanho variável usa ScanQuoteString
+      ScanQuoteString(buffer);
+      if (strcmp(buffer, "NULO") == 0) { // se é NULO
+         r->nomeLinha = NULL;
+         r->tamNomeLinha = 0;
+      } else {
+         r->nomeLinha = malloc((strlen(buffer) + 1) * sizeof(char));
+         strcpy(r->nomeLinha, buffer);
+         r->tamNomeLinha = strlen(buffer);
+      }
 
-        // codLinha
-        ScanQuoteString(buffer);
-        r->codLinha = verificar_nulo(buffer);
+      // codProxEstacao
+      scanf("%s", buffer); // se é int, usa scanf
+      r->codProxEstacao = verificar_nulo(buffer);
 
-        // nomeLinha
-        ScanQuoteString(buffer);
-        if (strcmp(buffer, "") == 0) {
-            r->nomeLinha = NULL;
-            r->tamNomeLinha = 0;
-        } else {
-            r->nomeLinha = malloc((strlen(buffer) + 1) * sizeof(char));
-            strcpy(r->nomeLinha, buffer);
-            r->tamNomeLinha = strlen(buffer);
-        }
+      // distProxEstacao
+      scanf("%s", buffer); // se é int, usa scanf
+      r->distProxEstacao = verificar_nulo(buffer);
 
-        // codProxEstacao
-        ScanQuoteString(buffer);
-        r->codProxEstacao = verificar_nulo(buffer);
+      // codLinhaIntegra
+      scanf("%s", buffer); // se é int, usa scanf
+      r->codLinhaIntegra = verificar_nulo(buffer);
 
-        // distProxEstacao
-        ScanQuoteString(buffer);
-        r->distProxEstacao = verificar_nulo(buffer);
+      // codEstIntegra
+      scanf("%s", buffer); // se é int, usa scanf
+      r->codEstIntegra = verificar_nulo(buffer);
 
-        // codLinhaIntegra
-        ScanQuoteString(buffer);
-        r->codLinhaIntegra = verificar_nulo(buffer);
+      // 6. Escrever o registro no arquivo de dados
+      int rrnDestino;
+      r->removido = '0'; // para o novo registro ficar ativo
+      r->proximo = -1; // apontar que é o final
+      
+      if (h->topo == -1) { // se pilha vazia
+         rrnDestino = h->proxRRN; // pega o próximo RRN
+         int byteOffset = 17 + (rrnDestino * 80);
+         fseek(arqBin, byteOffset, SEEK_SET);
+         
+         escreve_reg_dado_bin(arqBin, r);
+         
+         h->proxRRN++; // incrementa o próximo RRN disponível
+      } else { //reaproveita espaço dos removidos
+         rrnDestino = h->topo; // desempilha a pilha de removidos
 
-        // codEstIntegra
-        ScanQuoteString(buffer);
-        r->codEstIntegra = verificar_nulo(buffer);
+         int byteOffset = 17 + (rrnDestino * 80);
+         fseek(arqBin, byteOffset, SEEK_SET); // ir p/ posição a inserir
 
-        // escrita do arquivo de dados
-        int rrnDestino;
-        
-        if (h->topo == -1) {
-            // pilha vazia, escreve no fim do arquivo
-            rrnDestino = h->proxRRN;
-            long byteOffset = 17 + (rrnDestino * 80);
-            fseek(arqBin, byteOffset, SEEK_SET);
-            
-            escreve_reg_dado_bin(arqBin, r);
-            
-            h->proxRRN++; // Incrementa o próximo RRN disponível
-        } else {
-            //reaproveita espaço da pilha
-            rrnDestino = h->topo;
-            long byteOffset = 17 + (rrnDestino * 80);
-            
-            // Vamos até o prox da pilha
-            fseek(arqBin, byteOffset, SEEK_SET);
-            char removido;
-            int proximoPilha;
-            fread(&removido, sizeof(char), 1, arqBin);
-            fread(&proximoPilha, sizeof(int), 1, arqBin);
-            
-            // Voltamos ao início do espaço e gravamos o registro novo por cima
-            fseek(arqBin, byteOffset, SEEK_SET);
-            escreve_reg_dado_bin(arqBin, r);
-            
-            // Atualizamos o topo da pilha com o encadeamento que coletamos
-            h->topo = proximoPilha;
-        }
+         char removido; // só p/ pular esse 1 byte 
+         int proximoPilha; // p/ guardar p/ topo 
+         fread(&removido, sizeof(char), 1, arqBin);
+         fread(&proximoPilha, sizeof(int), 1, arqBin);
+         
+         // voltamos ao início do espaço e gravamos o registro novo por cima
+         fseek(arqBin, byteOffset, SEEK_SET); 
+         escreve_reg_dado_bin(arqBin, r);
+         
+         h->topo = proximoPilha; // atualizamos o topo da pilha
+      }
 
-        listaIndice[nRegistrosIndice].codEstacao = r->codEstacao;
-        listaIndice[nRegistrosIndice].RRN = rrnDestino;
-        nRegistrosIndice++;
+      // 7. Inserir o novo registro naa lista de índices
+      // realocar espaço para cada inserção nova
+      listaIndice = realloc(listaIndice, (nRegistrosIndice + 1) * sizeof(RegistroDadoIndice));
+      listaIndice[nRegistrosIndice].codEstacao = r->codEstacao;
+      listaIndice[nRegistrosIndice].RRN = rrnDestino;
+      nRegistrosIndice++;
 
-        h->nroEstacoes++;
-        if (r->codEstIntegra != -1) {
-            h->nroParesEstacoes++;
-        }
+      free_reg_dado(r);
+      free(r);
+   }
 
-        free_reg_dado(r);
-        free(r);
-    }
+   // 8. Ordena a lista de índices da RAM
+   heap(listaIndice, nRegistrosIndice); 
 
-    // mudanças no arquivo de índice
-    heap(listaIndice, nRegistrosIndice);
+   // 9. Salvar os dados nos arquivos binários
+  
+   // salvando o status do arquivo binário
+   h->status = '1';
+   escreve_reg_cab_bin(arqBin, h);
 
-    // Grava o cabeçalho do índice atualizado
-    fseek(arqInd, 0, SEEK_SET);
-    char statusConsistente = '1';
-    fwrite(&statusConsistente, sizeof(char), 1, arqInd);
+   // para remover qualquer lixo do arquivo
+   fclose(arqInd); // fecha o primeiro fluxo de rb+
+   arqInd = fopen(nomeArqIndice, "wb"); // abre de novo para só escrita
 
-    // Grava todos os dados ordenados no arquivo de índices
-    for (int i = 0; i < nRegistrosIndice; i++) {
-        fwrite(&listaIndice[i], sizeof(RegistroDadoIndice), 1, arqInd);
-    }
+   // salvando o status do arquivo de índice
+   hInd->status = '1';
+   escreve_reg_cab_ind(arqInd, hInd);
 
-    // mudanças no registro de cabeçalho
-    h->status = '1';
-    fseek(arqBin, 0, SEEK_SET);
-    escreve_reg_cab_bin(arqBin, h); 
+   // salvando a lista da RAM
+   for (int i = 0; i < nRegistrosIndice; i++){
+      if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
+   } 
 
-    free(listaIndice);
-    free_reg_cab(h);
-    fclose(arqBin);
-    fclose(arqInd);
+   // 10. Liberações de memória e fechamento
+   free(listaIndice);
+   free_reg_cab(h);
+   free(hInd);
+   fclose(arqBin);
+   fclose(arqInd);
 
-   //binário na tela
-    BinarioNaTela(nomeArqDados);
-    BinarioNaTela(nomeArqIndice);
+   // 11. Rodar o BinarioNaTela
+   BinarioNaTela(nomeArqDados);
+   BinarioNaTela(nomeArqIndice);
 }
 
 /* ================================================================================

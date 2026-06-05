@@ -82,12 +82,28 @@ void remover_registro(){
         // leitura do registro de dados
         RegistroDado *r = ler_reg_dado_bin(arqBin);
 
-        if (r != NULL) { // se existir o registro
-          r->removido = '1';     // marcar como removido
-          r->proximo = h->topo;  // o proximo vai apontar para o topo antigo
-          h->topo = rrnRemovido; // salva o topo com o removido
+        if (r != NULL && r->removido == '0') { // se existir o registro
+          // marcar como removido temporariamente no arq para a busca não o encontrar
+          fseek(arqBin, byteOffSet, SEEK_SET);
+          char flagRemovido = '1';
+          fwrite(&flagRemovido, sizeof(char), 1, arqBin);
 
-          fseek(arqBin, byteOffSet, SEEK_SET); // volta para a pos do registro para escrever
+          // verificar se a estação que estamos apagando era a última ativa com esse nome
+          if (!existe_nome_estacao(arqBin, h, r->nomeEstacao)) {
+            h->nroEstacoes--; 
+          }
+
+          // vrificar se esse par era o último ativo
+          if (!existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
+            h->nroParesEstacoes--;
+          }
+
+          // salva dados da remoção
+          r->removido = '1';     
+          r->proximo = h->topo;  
+          h->topo = rrnRemovido; 
+
+          fseek(arqBin, byteOffSet, SEEK_SET); 
           escreve_reg_dado_bin(arqBin, r);
 
           // atualizando a lista de índices na RAM
@@ -107,6 +123,7 @@ void remover_registro(){
   }
 
   // 8. Salvar os dados nos arquivos binários
+
 
   // salvando o status do arquivo binário
   h->status = '1';

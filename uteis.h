@@ -173,3 +173,7 @@ int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nReg
 *
 */
 void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice);
+
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado);
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao);
+
