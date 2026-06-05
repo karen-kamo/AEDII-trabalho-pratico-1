@@ -112,7 +112,7 @@ void ScanQuoteString(char *str) {
 //////////////////////////////
 
 int verificar_nulo(char *valor){
-  if (strcmp(valor, "NULO") == 0) return -1;
+  if (strcmp(valor, "NULO") == 0 || strlen(valor) == 0 || valor == NULL) return -1;
   return atoi(valor);
 }
 
@@ -224,10 +224,9 @@ RegistroDadoIndice *carregar_indice_na_memoria (char *nomeArqInd, int *nRegistro
       listaRegistros = temp; // se deu certo o realloc
     }
 
-    // leitura direta do Registro de Dado, pois tem tamanho fixo
-    if (fread(&listaRegistros[qtd], sizeof(RegistroDadoIndice), 1, arqInd) == 0) {
-      break;
-    }
+    // tenta ler os dois campos fixos do índice
+    if (fread(&listaRegistros[qtd].codEstacao, sizeof(int), 1, arqInd) != 1) break;
+    if (fread(&listaRegistros[qtd].RRN, sizeof(int), 1, arqInd) != 1) break;
 
     qtd++; // incrementa a quant de reg carregados
 
@@ -451,4 +450,48 @@ void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char 
             r->codEstIntegra = verificar_nulo(valoresCampos[b]);
         }
     }
+}
+
+////////////////////////////////////////////////
+
+// Retorna 1 se o nome já existe no arquivo binário, 0 caso contrário
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado) {
+  if (nomeProcurado == NULL) return 0;
+
+  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
+  
+  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
+    RegistroDado *r = ler_reg_dado_bin(arqBin); 
+    if (r != NULL) { // se deu certo de pegar reg
+      if (r->removido == '0' && r->nomeEstacao != NULL) {
+        if (strcmp(r->nomeEstacao, nomeProcurado) == 0) {
+          free_reg_dado(r); free(r);
+          return 1; // tem nome igual
+        }
+      }
+      free_reg_dado(r); free(r);
+    }
+  }
+  return 0; // não tem nome igual
+}
+
+// Retorna 1 se o par já existe no arquivo binário, 0 caso contrário
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao) {
+  if (codProxEstacao == -1) return 0;
+  
+  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
+
+  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
+    RegistroDado *r = ler_reg_dado_bin(arqBin);
+    if (r != NULL) { // se deu certo de pegar reg
+      if (r->removido == '0'){
+        if ((r->codEstacao == codEstacao && r->codProxEstacao == codProxEstacao) ||(r->codEstacao == codProxEstacao && r->codProxEstacao == codEstacao)) {
+          free_reg_dado(r); free(r);
+          return 1; // tem nome igual
+        }
+      }
+      free_reg_dado(r); free(r);
+    }
+  }
+  return 0; 
 }
