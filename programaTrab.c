@@ -48,7 +48,7 @@ int main(){
       break;
 
     case 8:
-      inserir_reg();
+      inserir_registro();
       break;
     
     case 9:

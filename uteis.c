@@ -8,6 +8,7 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 #include <stdlib.h>
 #include <ctype.h>
 
+
 #include "structs.h"
 #include "ler_arq.h"
 #include "escrever_arq.h"
@@ -42,6 +43,43 @@ void BinarioNaTela(char *arquivo) {
 
     free(mb);
     fclose(fs);
+}
+
+////////////////////////////////////////////
+
+void ScanQuoteString(char *str) {
+    char R;
+
+    while ((R = getchar()) != EOF && isspace(R))
+        ; // ignorar espaços, \r, \n...
+
+    if (R == 'N' || R == 'n') { // campo NULO
+        getchar();
+        getchar();
+        getchar();       // ignorar o "ULO" de NULO.
+        strcpy(str, ""); // copia string vazia
+    } else if (R == '\"') {
+        if (scanf("%[^\"]", str) != 1) { // ler até o fechamento das aspas
+            strcpy(str, "");
+        }
+        getchar();         // ignorar aspas fechando
+    } else if (R != EOF) { // vc tá tentando ler uma string que não tá entre
+                           // aspas! Fazer leitura normal %s então, pois deve
+                           // ser algum inteiro ou algo assim...
+        str[0] = R;
+        scanf("%s", &str[1]);
+    } else { // EOF
+        strcpy(str, "");
+    }
+}
+
+////////////////////////////////////////////
+
+char check_eof (FILE* arq){
+	char ch = 0;
+	ch = fgetc(arq);
+	fseek(arq, -1, SEEK_CUR);
+	return (ch==EOF)?0:1;
 }
 
 ////////////////////////////////////////////
@@ -81,49 +119,11 @@ void imprimir_reg_cab(RegistroCabecalho *h){
   printf("%c %d %d %d %d\n", h->status, h->topo, h->proxRRN, h->nroEstacoes, h->nroParesEstacoes);
 }
 
-////////////////////////////////////
-
-void ScanQuoteString(char *str) {
-    char R;
-
-    while ((R = getchar()) != EOF && isspace(R))
-        ; // ignorar espaços, \r, \n...
-
-    if (R == 'N' || R == 'n') { // campo NULO
-        getchar();
-        getchar();
-        getchar();       // ignorar o "ULO" de NULO.
-        strcpy(str, ""); // copia string vazia
-    } else if (R == '\"') {
-        if (scanf("%[^\"]", str) != 1) { // ler até o fechamento das aspas
-            strcpy(str, "");
-        }
-        getchar();         // ignorar aspas fechando
-    } else if (R != EOF) { // vc tá tentando ler uma string que não tá entre
-                           // aspas! Fazer leitura normal %s então, pois deve
-                           // ser algum inteiro ou algo assim...
-        str[0] = R;
-        scanf("%s", &str[1]);
-    } else { // EOF
-        strcpy(str, "");
-    }
-}
-
 //////////////////////////////
 
 int verificar_nulo(char *valor){
   if (strcmp(valor, "NULO") == 0 || strlen(valor) == 0 || valor == NULL) return -1;
   return atoi(valor);
-}
-
-
-///////////////////////////////
-
-char check_eof (FILE* arq){
-	char ch = 0;
-	ch = fgetc(arq);
-	fseek(arq, -1, SEEK_CUR);
-	return (ch==EOF)?0:1;
 }
 
 ////////////////////////////////
@@ -178,7 +178,7 @@ void heap (RegistroDadoIndice *array, int n){
 
 ///////////////////////////////////////////
 
-RegistroDadoIndice *carregar_indice_na_memoria (char *nomeArqInd, int *nRegistros){
+RegistroDadoIndice *carregamento (char *nomeArqInd, int *nRegistros){
   // abrir arquivo binário para leitura
   FILE *arqInd = fopen(nomeArqInd, "rb");
   if (arqInd == NULL) {
@@ -260,6 +260,28 @@ int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado){
   }
 
   return -1; // se não achou
+}
+
+//////////////////////////////////////////
+
+int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado) {
+    int esq = 0;
+    int dir = nRegistrosIndice - 1;
+
+    while (esq <= dir) {
+        int meio = esq + (dir - esq) / 2;
+
+        if (listaIndice[meio].codEstacao == codBuscado) {
+            return meio; // encontrou a posição exata no vetor
+        }
+
+        if (listaIndice[meio].codEstacao < codBuscado) {
+            esq = meio + 1;
+        } else {
+            dir = meio - 1;
+        }
+    }
+    return -1; // caso não encontre, mas deve achar, pois encontrou no arquivo binário
 }
 
 ///////////////////////////////////////////
@@ -356,29 +378,51 @@ RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, c
   return hInd;
 }
 
-/////////////////////////////////////////////
+////////////////////////////////////////////////
 
-int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado) {
-    int esq = 0;
-    int dir = nRegistrosIndice - 1;
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado) {
+  if (nomeProcurado == NULL) return 0;
 
-    while (esq <= dir) {
-        int meio = esq + (dir - esq) / 2;
-
-        if (listaIndice[meio].codEstacao == codBuscado) {
-            return meio; // encontrou a posição exata no vetor
+  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
+  
+  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
+    RegistroDado *r = ler_reg_dado_bin(arqBin); 
+    if (r != NULL) { // se deu certo de pegar reg
+      if (r->removido == '0' && r->nomeEstacao != NULL) {
+        if (strcmp(r->nomeEstacao, nomeProcurado) == 0) {
+          free_reg_dado(r); free(r);
+          return 1; // tem nome igual
         }
-
-        if (listaIndice[meio].codEstacao < codBuscado) {
-            esq = meio + 1;
-        } else {
-            dir = meio - 1;
-        }
+      }
+      free_reg_dado(r); free(r);
     }
-    return -1; // caso não encontre, mas deve achar, pois encontrou no arquivo binário
+  }
+  return 0; // não tem nome igual
 }
 
-//////////////////////////////////////////////
+////////////////////////////////////////////////
+
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao) {
+  if (codProxEstacao == -1) return 0;
+  
+  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
+
+  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
+    RegistroDado *r = ler_reg_dado_bin(arqBin);
+    if (r != NULL) { // se deu certo de pegar reg
+      if (r->removido == '0'){
+        if ((r->codEstacao == codEstacao && r->codProxEstacao == codProxEstacao) ||(r->codEstacao == codProxEstacao && r->codProxEstacao == codEstacao)) {
+          free_reg_dado(r); free(r);
+          return 1; // tem nome igual
+        }
+      }
+      free_reg_dado(r); free(r);
+    }
+  }
+  return 0; 
+}
+
+/////////////////////////////////////////////
 
 void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice) {
     
@@ -452,46 +496,3 @@ void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char 
     }
 }
 
-////////////////////////////////////////////////
-
-// Retorna 1 se o nome já existe no arquivo binário, 0 caso contrário
-int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado) {
-  if (nomeProcurado == NULL) return 0;
-
-  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
-  
-  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
-    RegistroDado *r = ler_reg_dado_bin(arqBin); 
-    if (r != NULL) { // se deu certo de pegar reg
-      if (r->removido == '0' && r->nomeEstacao != NULL) {
-        if (strcmp(r->nomeEstacao, nomeProcurado) == 0) {
-          free_reg_dado(r); free(r);
-          return 1; // tem nome igual
-        }
-      }
-      free_reg_dado(r); free(r);
-    }
-  }
-  return 0; // não tem nome igual
-}
-
-// Retorna 1 se o par já existe no arquivo binário, 0 caso contrário
-int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao) {
-  if (codProxEstacao == -1) return 0;
-  
-  fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
-
-  for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
-    RegistroDado *r = ler_reg_dado_bin(arqBin);
-    if (r != NULL) { // se deu certo de pegar reg
-      if (r->removido == '0'){
-        if ((r->codEstacao == codEstacao && r->codProxEstacao == codProxEstacao) ||(r->codEstacao == codProxEstacao && r->codProxEstacao == codEstacao)) {
-          free_reg_dado(r); free(r);
-          return 1; // tem nome igual
-        }
-      }
-      free_reg_dado(r); free(r);
-    }
-  }
-  return 0; 
-}

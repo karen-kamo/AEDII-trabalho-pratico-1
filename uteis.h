@@ -18,6 +18,25 @@ void BinarioNaTela(char *arquivo);
 
 
 /*!
+ * @brief Função disponibilizada pelos monitores.
+ *
+ * @param str A string.
+ *
+ */
+void ScanQuoteString(char *str);
+
+
+/*!
+ * @brief Checa se é o fim do arquivo.
+ *
+ * @param arq Arquivo csv para checar. Ele precisa permitir leitura.
+ *
+ * @return Retorna 0 caso seja o fim do arquivo, 1 caso o contrario.
+ */
+char check_eof (FILE* arq);
+
+
+/*!
  * @brief Serve para imprimir o conteúdo de um registro de dado.
  *
  * @param r O registro de dado.
@@ -36,15 +55,6 @@ void imprimir_reg_cab(RegistroCabecalho *h);
 
 
 /*!
- * @brief Função disponibilizada pelos monitores.
- *
- * @param str A string.
- *
- */
-void ScanQuoteString(char *str);
-
-
-/*!
  * @brief Função auxiliar para verificar se o valor inteiro recebido é nulo. 
  *
  * @param valor O valor que deve ser verificado.
@@ -52,17 +62,6 @@ void ScanQuoteString(char *str);
  * @return Retorna -1, caso seja nulo ou o valor inteiro.
  */
 int verificar_nulo(char *valor);
-
-
-
-/*!
- * @brief Checa se é o fim do arquivo.
- *
- * @param arq Arquivo csv para checar. Ele precisa permitir leitura.
- *
- * @return Retorna 0 caso seja o fim do arquivo, 1 caso o contrario.
- */
-char check_eof (FILE* arq);
 
 
 /*!
@@ -94,12 +93,14 @@ void heap (RegistroDadoIndice *array, int n);
  * 
  * @return Retorna o ponteiro da memória primária que contém a lista de registros do índice
  */
-RegistroDadoIndice *carregar_indice_na_memoria (char *nomeArqInd, int *nRegistros);
+RegistroDadoIndice *carregamento (char *nomeArqInd, int *nRegistros);
 
 
 /*!
  * @brief Função para realizar a busca binária na lista de Registros de Dados do Índice.
  *
+ * @param lista Lista de Registros de Dados do Índice.
+ * 
  * @param n Quantidade de registros.
  * 
  * @param codBuscado O codEstacao buscado pelo usuário.
@@ -110,6 +111,20 @@ int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado);
 
 
 /*!
+ * @brief Função auxiliar que faz a busca binária tradicional, retorna a posição ocupada pelo registro na lista do índice na memória.
+ *
+ * @param listaIndice Lista dinâmica do índice.
+ * 
+ * @param nRegistrosIndice Número de registros.
+ * 
+ * @param codBuscado O codEstacao buscado.
+ * 
+ * @return Retorna a posição do registro buscado na lista de índices da memória. O outro retorna o RRN.
+ */
+int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado);
+
+
+/*!
  * @brief Função auxiliar para buscas com filtro, para verificar as buscas filtro a filtro.
  *
  * @param r Registro de dado a ser analisado.
@@ -117,6 +132,8 @@ int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado);
  * @param nomesCampos Vetor com os campos a serem buscados.
  * 
  * @param valoresCampos Vetor com os valores a serem buscados.
+ * 
+ * @param quantPar Quantidade de pares que serão verificados.
  * 
  * @return Retorna 1 caso algum filtro de certo e 0 se não der em algum.
  */
@@ -146,25 +163,40 @@ RegistroCabecalho *abrir_e_validar_arq_bin (char *nomeArqBin, FILE **arqBin, cha
  * 
  * @param modo O modo de abertura do arquivo.
  * 
- * @return Retorna o RegistroCabecalho do arquivo binário.
+ * @return Retorna o RegistroCabecalho do arquivo de índice.
  */
 RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, char modo[3]);
 
 
+/*!
+ * @brief Função auxiliar para verificar se o nomeEstacao existe no arquivo de dados.
+ *
+ * @param arqBin O arquivo de dados.
+ * 
+ * @param h O Registro de Cabeçalho do arquivo de dados.
+ * 
+ * @param nomeProcurado O nomeEstacao procurado.
+ * 
+ * @return Retorna 1 se o nome já existe no arquivo de dados, 0 se não existe.
+ */
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado);
+
 
 /*!
- * @brief Função auxiliar que faz a busca binária tradicional, retorna a posição ocupada pelo registro na lista do índice na memória.
+ * @brief Função auxiliar para verificar se o par (codEstacao, codProxEstacao) existe no arquivo de dados.
  *
- * @param listaIndice Lista dinâmica do índice.
+ * @param arqBin O arquivo de dados.
  * 
- * @param nRegistrosIndice Número de registros.
+ * @param h O Registro de Cabeçalho do arquivo de dados.
  * 
- * @param codBuscado O codEstacao buscado.
+ * @param codEstacao O codEstacao para ser verificado.
  * 
- * @return Retorna a posição do registro buscado na lista de índices da memória. O outro retorna o RRN.
+ * @param codProxEstacao O codProxEstacao para ser verificado.
+ * 
+ * @return Retorna 1 se o par já existe no arquivo de dados, 0 se não existe.
  */
-int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nRegistrosIndice, int codBuscado);
-#endif
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao);
+
 
 /*!
 * @brief Função para facilitar a atualização da Registro de Dados, modificado pelo usuário.
@@ -174,6 +206,11 @@ int busca_binaria_posicao_lista_indice(RegistroDadoIndice *listaIndice, int nReg
 */
 void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice);
 
-int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado);
-int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao);
+
+#endif
+
+
+
+
+
 
