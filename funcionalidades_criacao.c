@@ -6,7 +6,6 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "structs.h"
 #include "ler_arq.h"

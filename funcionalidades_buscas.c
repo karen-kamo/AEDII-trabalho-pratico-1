@@ -263,7 +263,7 @@ void busca_indexada(){
 
   // carregando o índice para a RAM
   int nRegistrosIndice = 0; // para guardar quant de regs
-  RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqInd, &nRegistrosIndice);
+  RegistroDadoIndice *listaIndice = carregamento(nomeArqInd, &nRegistrosIndice);
 
   if (listaIndice == NULL){
     free_reg_cab(h);

@@ -6,7 +6,6 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "structs.h"
 #include "ler_arq.h"
@@ -48,7 +47,7 @@ void remover_registro(){
 
   // 2. Carrega o índice para a RAM - fiz primeiro, pois abre e fecha arq na função de carregar
   int nRegistrosIndice = 0; // para guardar quant de regs
-  RegistroDadoIndice *listaIndice = carregar_indice_na_memoria(nomeArqInd, &nRegistrosIndice);
+  RegistroDadoIndice *listaIndice = carregamento(nomeArqInd, &nRegistrosIndice);
   if (listaIndice == NULL){ // se deu errado
     free_reg_cab(h);
     fclose(arqBin);

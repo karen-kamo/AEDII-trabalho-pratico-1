@@ -64,7 +64,7 @@ void remover_registro();
 * @brief Funcionalidade 8 para inserir novos registros e atualizar o índice
 *
 */
-void inserir_reg();
+void inserir_registro();
 
 /*!
 * @brief Funcionalidade 9 para buscar e atualizar os registros apontados
