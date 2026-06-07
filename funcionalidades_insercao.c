@@ -106,6 +106,16 @@ void inserir_reg() {
       scanf("%s", buffer); // se é int, usa scanf
       r->codEstIntegra = verificar_nulo(buffer);
 
+      // verificar se a estação que estamos apagando era a última ativa com esse nome
+      if (!existe_nome_estacao(arqBin, h, r->nomeEstacao)) {
+         h->nroEstacoes++; 
+      }
+
+      // vrificar se esse par era o último ativo
+      if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
+         h->nroParesEstacoes++;
+      }
+
       // 6. Escrever o registro no arquivo de dados
       int rrnDestino;
       r->removido = '0'; // para o novo registro ficar ativo
