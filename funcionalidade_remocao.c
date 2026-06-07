@@ -94,7 +94,7 @@ void remover_registro(){
           }
 
           // vrificar se esse par era o último ativo
-          if (!existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
+          if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
             h->nroParesEstacoes--;
           }
 
