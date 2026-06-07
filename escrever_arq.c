@@ -35,6 +35,23 @@ void escreve_reg_cab_bin(FILE* arq, RegistroCabecalho *h){
 }
 
 void escreve_reg_dado_bin(FILE* arq, const RegistroDado* r){
+  /*
+   * MUDANÇA PARA CONSEGUIR BATER OS BINÁRIO NA FUNC 9
+   */  
+  
+  // 1. Guarda onde o registo começa antes de escrever
+  long pos_inicial = ftell(arq);
+
+  // 2. Preenche os próximos 80 bytes com '$' para apagar o passado
+  char lixo[80];
+  memset(lixo, '$', 80);
+  fwrite(lixo, sizeof(char), 80, arq);
+
+  // 3. Volta o ponteiro para o início para a tua função escrever por cima com segurança
+  fseek(arq, pos_inicial, SEEK_SET);
+  
+  
+  
   // para calcular se os 80 bytes foram utilizados
   int bytes_usados = 0;
 
