@@ -177,11 +177,9 @@ RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, c
  * 
  * @param nomeProcurado O nomeEstacao procurado.
  * 
- * @param rrnIgnorado RRN que não deve ser levado em conta para verificar os dados.
- * 
  * @return Retorna 1 se o nome já existe no arquivo de dados, 0 se não existe.
  */
-int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado, int rrnIgnorado);
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado);
 
 
 /*!
@@ -195,11 +193,19 @@ int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado,
  * 
  * @param codProxEstacao O codProxEstacao para ser verificado.
  * 
- * @param rrnIgnorado RRN que não deve ser levado em conta para verificar os dados.
- * 
  * @return Retorna 1 se o par já existe no arquivo de dados, 0 se não existe.
  */
-int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao, int rrnIgnorado);
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao);
+
+
+/*!
+* @brief Função para facilitar a atualização da Registro de Dados, modificado pelo usuário.
+*
+* @param 
+*
+*/
+void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice);
+
 
 #endif
 
