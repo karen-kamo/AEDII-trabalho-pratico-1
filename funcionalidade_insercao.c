@@ -19,20 +19,6 @@ Rebeca de Oliveira Silva - NUSP: 11963923
 ******************************FUNCIONALIDADE 8************************************
 
 ===================================================================================*/ 
-/* Funcionalidades: 
-   1. Abrir o arquivo binário para escrita e leitura
-   2. Carrega o índice para a RAM - fiz primeiro, pois abre e fecha arq na função de carregar
-   3. Abrir o arquivo de índice para escrita e leitura
-   4. Mudar status dos arquivos
-   5. Pegar os valores para inserção
-   6. Escrever o registro no arquivo de dados
-   7. Inserir o novo registro na lista de índices
-   8. Ordena a lista de índices da RAM
-   9. Salvar os dados nos arquivos binários
-   10. Liberações de memória e fechamento
-   11. Rodar o BinarioNaTela
-*/
-
 void inserir_registro() {
    char nomeArqDados[100];
    char nomeArqIndice[100];
@@ -121,12 +107,12 @@ void inserir_registro() {
       r->codEstIntegra = verificar_nulo(buffer);
 
       // verificar se a estação que estamos apagando era a última ativa com esse nome
-      if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, -1)) {
+      if (!existe_nome_estacao(arqBin, h, r->nomeEstacao)) {
          h->nroEstacoes++; 
       }
 
       // vrificar se esse par era o último ativo
-      if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, -1)) {
+      if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
          h->nroParesEstacoes++;
       }
 
@@ -161,7 +147,7 @@ void inserir_registro() {
          h->topo = proximoPilha; // atualizamos o topo da pilha
       }
 
-      // 7. Inserir o novo registro na lista de índices
+      // 7. Inserir o novo registro naa lista de índices
       // realocar espaço para cada inserção nova
       listaIndice = realloc(listaIndice, (nRegistrosIndice + 1) * sizeof(RegistroDadoIndice));
       listaIndice[nRegistrosIndice].codEstacao = r->codEstacao;

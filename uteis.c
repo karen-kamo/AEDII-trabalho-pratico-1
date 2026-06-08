@@ -380,55 +380,119 @@ RegistroCabecalhoIndice *abrir_e_validar_ind (char *nomeArqInd, FILE **arqInd, c
 
 ////////////////////////////////////////////////
 
-int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado, int rrnIgnorado) {
+int existe_nome_estacao(FILE *arqBin, RegistroCabecalho *h, char *nomeProcurado) {
   if (nomeProcurado == NULL) return 0;
 
-  int posicaoSalva = ftell(arqBin); // salva a posição que tava antes
   fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
   
   for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
     RegistroDado *r = ler_reg_dado_bin(arqBin); 
     if (r != NULL) { // se deu certo de pegar reg
-      // rrnIgnorado p/ não levar ele em conta na busca
-      if (i != rrnIgnorado && r->removido == '0' && r->nomeEstacao != NULL) {
+      if (r->removido == '0' && r->nomeEstacao != NULL) {
         if (strcmp(r->nomeEstacao, nomeProcurado) == 0) {
           free_reg_dado(r); free(r);
-          fseek(arqBin, posicaoSalva, SEEK_SET); // restaura a posição original
           return 1; // tem nome igual
         }
       }
       free_reg_dado(r); free(r);
     }
   }
-  fseek(arqBin, posicaoSalva, SEEK_SET); // restaura a posição original
   return 0; // não tem nome igual
 }
 
 ////////////////////////////////////////////////
 
-int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao, int rrnIgnorado) {
+int existe_par(FILE *arqBin, RegistroCabecalho *h, int codEstacao, int codProxEstacao) {
   if (codProxEstacao == -1) return 0;
-
-  int posicaoSalva = ftell(arqBin); // salva a posição que tava antes
+  
   fseek(arqBin, 17, SEEK_SET); // pula cabeçalho
 
   for (int i = 0; i < h->proxRRN; i++) { //loop até quant de reg
     RegistroDado *r = ler_reg_dado_bin(arqBin);
     if (r != NULL) { // se deu certo de pegar reg
-      // rrnIgnorado p/ não levar ele em conta na busca
-      if (i != rrnIgnorado && r->removido == '0'){
+      if (r->removido == '0'){
         if ((r->codEstacao == codEstacao && r->codProxEstacao == codProxEstacao) ||(r->codEstacao == codProxEstacao && r->codProxEstacao == codEstacao)) {
           free_reg_dado(r); free(r);
-          fseek(arqBin, posicaoSalva, SEEK_SET); // restaura a posição original
           return 1; // tem nome igual
         }
       }
       free_reg_dado(r); free(r);
     }
   }
-  fseek(arqBin, posicaoSalva, SEEK_SET); // restaura a posição original
   return 0; 
 }
 
+/////////////////////////////////////////////
 
+void atualizar_reg_pelo_filtro(RegistroDado *r, char nomesCampos[10][500], char valoresCampos[10][500], int quantAlt, RegistroDadoIndice *listaIndice, int nRegistrosIndice) {
+    
+    //loop para a quantidade de alterações proposta pelo usuário. 
+    for (int b = 0; b < quantAlt; b++) {
+
+        // Atualizar o codEstacao
+        if (strcmp(nomesCampos[b], "codEstacao") == 0) {
+            int novoCod = verificar_nulo(valoresCampos[b]); //puxa a função anterior
+            
+            // Procura o código antigo no índice e atualiza com o novo
+            int posNoIndice = busca_binaria_posicao_lista_indice(listaIndice, nRegistrosIndice, r->codEstacao);
+            //se for igual a -1 não achou o indice do codEstacao
+            if (posNoIndice != -1) {
+                listaIndice[posNoIndice].codEstacao = novoCod; //Atualiza a lista que esta na RAM
+            }
+            r->codEstacao = novoCod; //Atualiza na Struct/Registro de Dados
+        }
+
+        // Atualizar o nomeEstacao
+        else if (strcmp(nomesCampos[b], "nomeEstacao") == 0) {
+            // precisamos dar free para não causar vazamento de memória
+            free(r->nomeEstacao); // Limpa o nome antigo
+            if (strcmp(valoresCampos[b], "NULO") == 0) { //Caso o usuário digite "NULO" 
+                r->nomeEstacao = NULL;
+                r->tamNomeEstacao = 0;
+            } else {
+                r->nomeEstacao = malloc((strlen(valoresCampos[b]) + 1) * sizeof(char)); //Alocação dinâmica para a nova string
+                strcpy(r->nomeEstacao, valoresCampos[b]); //Cópia para dentro do Registro de Dados
+                r->tamNomeEstacao = strlen(valoresCampos[b]); //Pega o tamanho da string fornecida pelo usuário
+            }
+        }
+
+        // Atualizar o codLinha
+        else if (strcmp(nomesCampos[b], "codLinha") == 0) {
+            r->codLinha = verificar_nulo(valoresCampos[b]);
+        }
+
+        //  Atualizar o nomeLinha 
+        else if (strcmp(nomesCampos[b], "nomeLinha") == 0) {
+            free(r->nomeLinha); 
+            if (strcmp(valoresCampos[b], "NULO") == 0) {
+                r->nomeLinha = NULL;
+                r->tamNomeLinha = 0;
+            } else {
+                r->nomeLinha = malloc((strlen(valoresCampos[b]) + 1) * sizeof(char));
+                strcpy(r->nomeLinha, valoresCampos[b]);
+                r->tamNomeLinha = strlen(valoresCampos[b]);
+            }
+        }
+
+        // Atualizar o codProxEstacao
+        else if (strcmp(nomesCampos[b], "codProxEstacao") == 0) {
+            r->codProxEstacao = verificar_nulo(valoresCampos[b]);
+        }
+
+        // Atualizar o distProxEstacao
+        else if (strcmp(nomesCampos[b], "distProxEstacao") == 0) {
+            r->distProxEstacao = verificar_nulo(valoresCampos[b]);
+        }
+
+        // Atualizar o codLinhaIntegra
+        else if (strcmp(nomesCampos[b], "codLinhaIntegra") == 0) {
+            r->codLinhaIntegra = verificar_nulo(valoresCampos[b]);
+        }
+          
+        // Atualizar o codEstIntegra
+        else if (strcmp(nomesCampos[b], "codEstIntegra") == 0) {
+            r->codEstIntegra = verificar_nulo(valoresCampos[b]);
+        }
+    }
+}
 

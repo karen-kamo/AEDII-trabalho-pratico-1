@@ -88,12 +88,12 @@ void remover_registro(){
           fwrite(&flagRemovido, sizeof(char), 1, arqBin);
 
           // verificar se a estação que estamos apagando era a última ativa com esse nome
-          if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnRemovido)) {
+          if (!existe_nome_estacao(arqBin, h, r->nomeEstacao)) {
             h->nroEstacoes--; 
           }
 
           // vrificar se esse par era o último ativo
-          if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnRemovido)) {
+          if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao)) {
             h->nroParesEstacoes--;
           }
 

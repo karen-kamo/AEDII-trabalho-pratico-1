@@ -52,7 +52,7 @@ int main(){
       break;
     
     case 9:
-      atualizar_registro();
+      atualizar_reg();
       break;
 
     default:
