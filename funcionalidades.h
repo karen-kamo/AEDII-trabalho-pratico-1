@@ -70,7 +70,7 @@ void inserir_registro();
 * @brief Funcionalidade 9 para buscar e atualizar os registros apontados
 *
 */
-void atualizar_reg();
+void atualizar_registro();
 
 
 /*!
