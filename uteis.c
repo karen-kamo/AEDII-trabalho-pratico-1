@@ -241,6 +241,14 @@ RegistroDadoIndice *carregamento (char *nomeArqInd, int *nRegistros){
 
 //////////////////////////////////////////
 
+void reescrita(FILE *arqInd, RegistroDadoIndice *listaIndice, int nRegistrosIndice){
+  for (int i = 0; i < nRegistrosIndice; i++){
+      if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
+   }
+}
+
+//////////////////////////////////////////
+
 int busca_binaria_indice(RegistroDadoIndice *lista, int n, int codBuscado){
   int ini = 0;
   int fim = n - 1;

@@ -97,6 +97,19 @@ RegistroDadoIndice *carregamento (char *nomeArqInd, int *nRegistros);
 
 
 /*!
+ * @brief Função para reescrever os registros de dados da lista de índice da memória primária no arquivo de índice.
+ *
+ * @param arqInd Ponteiro que aponta para o arquivo de índice.
+ * 
+ * @param listaIndice Lista de índices carregados em memória primária.
+ * 
+ * @param nRegistrosIndice Número de registros contido no índice.
+ * 
+ */
+void reescrita(FILE *arqInd, RegistroDadoIndice *listaIndice, int nRegistrosIndice);
+
+
+/*!
  * @brief Função para realizar a busca binária na lista de Registros de Dados do Índice.
  *
  * @param lista Lista de Registros de Dados do Índice.

@@ -57,7 +57,12 @@ void inserir_registro() {
    // 3. Abrir o arquivo de índice para escrita e leitura
    FILE *arqInd = NULL; // inicializa o ponteiro
    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+"); // para leitura e escrita
-   if (hInd == NULL) return; // se der errado, só para
+   if (hInd == NULL) { // se der errado, só para
+      free_reg_cab(h);
+      fclose(arqBin);
+      free(listaIndice);
+      return;
+   } 
 
    // 4. Mudar status dos arquivos
    h->status = '0';
@@ -85,8 +90,8 @@ void inserir_registro() {
          r->tamNomeEstacao = 0;
       } else {
          r->nomeEstacao = malloc((strlen(buffer) + 1) * sizeof(char));
-         strcpy(r->nomeEstacao, buffer);
-         r->tamNomeEstacao = strlen(buffer);
+         strcpy(r->nomeEstacao, buffer); // copia o que foi digitado no reg
+         r->tamNomeEstacao = strlen(buffer); // pega o tamanho da string
       }
 
       // codLinha - lê para ver se é NULO, se não vai guardar o valor
@@ -121,14 +126,10 @@ void inserir_registro() {
       r->codEstIntegra = verificar_nulo(buffer);
 
       // verificar se a estação que estamos apagando era a última ativa com esse nome
-      if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, -1)) {
-         h->nroEstacoes++; 
-      }
+      if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, -1)) h->nroEstacoes++;
 
       // vrificar se esse par era o último ativo
-      if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, -1)) {
-         h->nroParesEstacoes++;
-      }
+      if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, -1)) h->nroParesEstacoes++;
 
       // 6. Escrever o registro no arquivo de dados
       int rrnDestino;
@@ -139,19 +140,18 @@ void inserir_registro() {
          rrnDestino = h->proxRRN; // pega o próximo RRN
          int byteOffset = 17 + (rrnDestino * 80);
          fseek(arqBin, byteOffset, SEEK_SET);
-         
          escreve_reg_dado_bin(arqBin, r);
-         
          h->proxRRN++; // incrementa o próximo RRN disponível
+
       } else { //reaproveita espaço dos removidos
          rrnDestino = h->topo; // desempilha a pilha de removidos
 
          int byteOffset = 17 + (rrnDestino * 80);
          fseek(arqBin, byteOffset, SEEK_SET); // ir p/ posição a inserir
 
-         char removido; // só p/ pular esse 1 byte 
+         char removido; 
          int proximoPilha; // p/ guardar p/ topo 
-         fread(&removido, sizeof(char), 1, arqBin);
+         fread(&removido, sizeof(char), 1, arqBin); // só p/ pular esse 1 byte 
          fread(&proximoPilha, sizeof(int), 1, arqBin);
          
          // voltamos ao início do espaço e gravamos o registro novo por cima
@@ -176,7 +176,6 @@ void inserir_registro() {
    heap(listaIndice, nRegistrosIndice); 
 
    // 9. Salvar os dados nos arquivos binários
-  
    // salvando o status do arquivo binário
    h->status = '1';
    escreve_reg_cab_bin(arqBin, h);
@@ -190,9 +189,7 @@ void inserir_registro() {
    escreve_reg_cab_ind(arqInd, hInd);
 
    // salvando a lista da RAM
-   for (int i = 0; i < nRegistrosIndice; i++){
-      if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
-   } 
+   reescrita(arqInd, listaIndice, nRegistrosIndice);  
 
    // 10. Liberações de memória e fechamento
    free(listaIndice);

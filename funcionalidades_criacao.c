@@ -186,7 +186,7 @@ void criar_indice(){
     return;
   }
 
-  // 3. escrever o Registro de Cabeçalho do Índice
+  // 2. escrever o Registro de Cabeçalho do Índice
   RegistroCabecalhoIndice *hInd = NULL; // incialização do Registro de cabeçalho de índice
   hInd = (RegistroCabecalhoIndice *) malloc(sizeof(RegistroCabecalhoIndice)); // alocação do registro de cabeçalho
   
@@ -226,13 +226,11 @@ void criar_indice(){
   
   fseek(arqBin, 17, SEEK_SET); // pulando o Reg de Cabeçalho do bin
 
-  // lendo os registros de dados e armazenando os Reg Dado Índice em mem. primária
+  // 3. ler todos os registros de dados e armazenar dados (codEstacao e RRN) em memória primária (para ordenar)
   while (check_eof(arqBin)){
     RegistroDado *r = ler_reg_dado_bin(arqBin);
 
-    if (r == NULL) { // se n tiver memória
-      break;
-    }
+    if (r == NULL) break; // se n tiver memória
       
     if (r->removido == '1'){
       rrnAtual++; // deve incrementar sendo removido ou não
@@ -263,9 +261,7 @@ void criar_indice(){
   heap(listaIndices, nRegistros);
 
   // 5. armazenar no arqIndice
-  for (int i = 0; i < nRegistros; i++){
-    escreve_reg_dado_ind(arqInd, &listaIndices[i]);
-  }
+  reescrita(arqInd, listaIndices, nRegistros);
 
   //deve atualizar o status no final
   hInd->status = '1';
@@ -273,7 +269,6 @@ void criar_indice(){
 
   free(listaIndices);
   free(hInd);
-
   fclose(arqBin);
   fclose(arqInd);
 

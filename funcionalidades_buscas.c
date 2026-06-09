@@ -240,14 +240,16 @@ void buscar_reg_RRN(){
 
 /* Funcionalidades: 
 
-  1. Abrir o arquivo.bin para leitura e status
-  2. Quantidade de buscas pelo usuário
-  3. Quantidade de pares de busca pelo usuário 
-  4. Entrada dos valores desejadas pelo usuário
-  5. Verifica se uma das buscas é por codEstacao
-  6. Se for, carrega o índice na RAM e busca pelo índice
-  7. Se não, faz busca sequencial
-  8. Imprime, caso exista
+  1. Abrir o arquivo de dados para leitura e status
+  2. Carrega o índice para a RAM
+  3. Quantidade de buscas pelo usuário
+  4. Chama executar_busca_indexada 
+    4.1 Quantidade de pares de busca pelo usuário 
+    4.2 Entrada dos valores desejadas pelo usuário
+    4.3 Verifica se uma das buscas é por codEstacao
+    4.4 Se for, carrega o índice na RAM e busca pelo índice
+    4.5 Se não, faz busca sequencial
+  5. Imprime, caso exista
 */
 void busca_indexada(){
   char nomeArqBin[100];
@@ -256,12 +258,12 @@ void busca_indexada(){
 
   scanf("%s %s %d", nomeArqBin, nomeArqInd, &quantBusca); // leitura dos inputs do usuário
 
-  // 1. Abrir o arquivo.bin para leitura e status
+  // 1. Abrir o arquivo de dados para leitura e status
   FILE *arqBin = NULL; // inicializa o ponteiro
   RegistroCabecalho *h = abrir_e_validar_arq_bin(nomeArqBin, &arqBin, "rb");
   if (h == NULL) return; // se der errado, só para
 
-  // carregando o índice para a RAM
+  // 2. Carrega o índice para a RAM
   int nRegistrosIndice = 0; // para guardar quant de regs
   RegistroDadoIndice *listaIndice = carregamento(nomeArqInd, &nRegistrosIndice);
 
@@ -271,16 +273,16 @@ void busca_indexada(){
     return; // quer dizer que não tem os regs 
   }
 
-  // 2. Quantidade de buscas pelo usuário
+  // 3. Quantidade de buscas pelo usuário
   // loop para buscar de acordo com a quantidade desejada
   for (int i = 0; i < quantBusca; i++){
     int posSequencial = 17; // pula o registro de cabeçalho
     int rrnEncontrado;
-    int encontrouAlgum = 0;
+    int flagEncontrou = 0;
 
     // enquanto existir um rrn válido (p/ buscas com vários resultados)
     while ((rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial)) != -1){
-      encontrouAlgum = 1;
+      flagEncontrou = 1;
 
       // calculando o byteOffSet p/ pegar registro
       int byteOffSet = 80 * rrnEncontrado + 17;
@@ -288,6 +290,7 @@ void busca_indexada(){
       RegistroDado *r = ler_reg_dado_bin(arqBin);
 
       if (r != NULL) { // se algo deu errado
+        // 5. Imprime, caso exista
         imprimir_reg_dado(r);
         free_reg_dado(r);
         free(r);
@@ -297,11 +300,10 @@ void busca_indexada(){
       if (posSequencial == 17) break;
     }
 
-    if (!encontrouAlgum) {
-      printf("Registro inexistente.\n");
-    }
+    // se não encontrou ou está logicamente removido
+    if (!flagEncontrou) printf("Registro inexistente.\n");
     
-    if (i < quantBusca - 1) printf("\n");
+    if (i < quantBusca - 1) printf("\n"); // pula linha
   }
 
   // dar free e close
@@ -327,11 +329,10 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
 
     scanf("%d", &quantPar); // input de quantos pares vai desejar buscar
 
-    // 3. Quantidade de pares de busca pelo usuário 
     // loop para a quantidade de pares desejadas
     for (int j = 0; j < quantPar; j++){
 
-      // 4. Entrada dos valores desejadas pelo usuário
+      // entrada dos valores desejadas pelo usuário
       scanf("%s", nomesCampos[j]); // lê o nome do campo desajado
 
       if (strcmp(nomesCampos[j], "nomeEstacao") == 0 ||
@@ -346,7 +347,7 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
     }
   }
 
-  // 5. Verifica se uma das buscas é por codEstacao
+  // verifica se uma das buscas é por codEstacao
   if (filtroCod && listaIndice != NULL){
     int rrnBuscado = busca_binaria_indice(listaIndice, nRegistrosIndice, codBuscado);
 
@@ -380,7 +381,7 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
     return -1; // não achou registro
   } 
   
-  else { // 7. Se não, faz busca sequencial
+  else { // se não, faz busca sequencial
     // mover para o byte de onde parou
     fseek(arqBin, *posSequencial, SEEK_SET);
 

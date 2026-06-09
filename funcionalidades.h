@@ -80,7 +80,7 @@ void atualizar_registro();
  * 
  * @param nRegistrosIndice O número de registros no arquivo de índice.
  * 
- * @param h O Registro de Cabecalho do arquivo binário.
+ * @param h O Registro de Cabecalho do arquivo de dados.
  * 
  * @param arqBin O arquivo binário.
  * 

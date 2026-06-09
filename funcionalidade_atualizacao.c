@@ -1,3 +1,8 @@
+/*
+Karen Nanamy Kamo - NUSP: 15495932 
+Rebeca de Oliveira Silva - NUSP: 11963923
+*/
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +59,12 @@ void atualizar_registro() {
    // 3. Abrir o arquivo de índice para escrita e leitura
    FILE *arqInd = NULL; // inicializa o ponteiro
    RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqIndice, &arqInd, "rb+"); // para leitura e escrita
-   if (hInd == NULL) return; // se der errado, só para
+   if (hInd == NULL) { // se der errado, só para
+      free_reg_cab(h);
+      fclose(arqBin);
+      free(listaIndice);
+      return;
+   }
 
    // 4. Mudar status dos arquivos
    h->status = '0';
@@ -67,8 +77,9 @@ void atualizar_registro() {
    for (int i = 0; i < nAtualizacoes; i++){ 
       // 6. Fazer a busca pelos campos e valores desejados
       fseek(arqBin, 17, SEEK_SET); // aponta para os regs de dados
-      int posSequencial = 17;
-      // essa função guarda campo e valor e faz a busca 
+      int posSequencial = 17; // p/ fazer a busca
+
+      // função para fazer a busca  
       int rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
      
       // 7. Guardar campo e valor que usuário quer alterar
@@ -79,7 +90,7 @@ void atualizar_registro() {
       char nomeCampoNew[100][500]; 
       char valorCampoNew[100][500]; 
 
-      // flags para regras específicas
+      // flags para regras específicas do cab
       int flagCod = 0;
       int flagNomeUnico = 0;
       int flagPar = 0;
@@ -94,13 +105,9 @@ void atualizar_registro() {
 
          // verificando se os campos nomEstacao, codEstacao e codProxEstacao serão mudados
          // pois, tem regras específicas para eles
-         if (strcmp(nomeCampoNew[j], "nomeEstacao") == 0){
-            flagNomeUnico = 1;
-         } else if (strcmp(nomeCampoNew[j], "codEstacao") == 0){
-            flagCod = 1;
-         } else if (strcmp(nomeCampoNew[j], "codProxEstacao") == 0){
-            flagPar = 1;
-         }
+         if (strcmp(nomeCampoNew[j], "nomeEstacao") == 0)flagNomeUnico = 1;
+         else if (strcmp(nomeCampoNew[j], "codEstacao") == 0)flagCod = 1;
+         else if (strcmp(nomeCampoNew[j], "codProxEstacao") == 0)flagPar = 1;
       }
 
       while (rrnEncontrado != -1){ // se ainda tiver registro válido
@@ -123,37 +130,26 @@ void atualizar_registro() {
                      if (strcmp(valorCampoNew[j], "NULO") == 0) novoNomeEstacao = NULL;
                      else novoNomeEstacao = valorCampoNew[j];
                   }
-                  if (strcmp(nomeCampoNew[j], "codEstacao") == 0) {
-                     novoCodEstacao = verificar_nulo(valorCampoNew[j]);
-                  }
-                  if (strcmp(nomeCampoNew[j], "codProxEstacao") == 0) {
-                     novoCodProxEstacao = verificar_nulo(valorCampoNew[j]);
-                  }
+                  if (strcmp(nomeCampoNew[j], "codEstacao") == 0) novoCodEstacao = verificar_nulo(valorCampoNew[j]);
+                  if (strcmp(nomeCampoNew[j], "codProxEstacao") == 0) novoCodProxEstacao = verificar_nulo(valorCampoNew[j]);
                }
 
                // verificação do nroEstacoes
                if (flagNomeUnico){
                   // se não tiver nenhum outro registro com o mesmo nome, deve decrementar
-                  if (r->nomeEstacao != NULL && !existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnEncontrado)) {
-                     h->nroEstacoes--;
-                  }
+                  if (r->nomeEstacao != NULL && !existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnEncontrado)) h->nroEstacoes--;
 
                   // se é um novo nome, deve incrementar
-                  if (novoNomeEstacao != NULL && !existe_nome_estacao(arqBin, h, novoNomeEstacao, rrnEncontrado)) {
-                     h->nroEstacoes++;
-                  }
+                  if (novoNomeEstacao != NULL && !existe_nome_estacao(arqBin, h, novoNomeEstacao, rrnEncontrado)) h->nroEstacoes++;
                }
 
                // verificação do nroParesEstacoes
                if (flagCod || flagPar) {
                   // se era um par que não existia em mais nenhum, decrementa
-                  if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnEncontrado)) {
-                     h->nroParesEstacoes--;
-                  }
+                  if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnEncontrado)) h->nroParesEstacoes--;
+
                   // se é um novo par, incrementa
-                  if (novoCodProxEstacao != -1 && !existe_par(arqBin, h, novoCodEstacao, novoCodProxEstacao, rrnEncontrado)) {
-                     h->nroParesEstacoes++;
-                  }
+                  if (novoCodProxEstacao != -1 && !existe_par(arqBin, h, novoCodEstacao, novoCodProxEstacao, rrnEncontrado)) h->nroParesEstacoes++;
                }
 
                // 9. Atualização no registro de dados
@@ -252,9 +248,7 @@ void atualizar_registro() {
    escreve_reg_cab_ind(arqInd, hInd);
 
    // salvando a lista da RAM
-   for (int i = 0; i < nRegistrosIndice; i++){
-      if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
-   } 
+   reescrita(arqInd, listaIndice, nRegistrosIndice); 
 
    // 12. Liberações de memória e fechamento
    free(listaIndice);

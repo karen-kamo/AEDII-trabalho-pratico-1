@@ -57,7 +57,12 @@ void remover_registro(){
   // 3. Abrir o arquivo de índice para escrita e leitura
   FILE *arqInd = NULL; // inicializa o ponteiro
   RegistroCabecalhoIndice *hInd = abrir_e_validar_ind(nomeArqInd, &arqInd, "rb+"); // para leitura e escrita
-  if (hInd == NULL) return; // se der errado, só para
+  if (hInd == NULL) { // se der errado, só para
+      free_reg_cab(h);
+      fclose(arqBin);
+      free(listaIndice);
+      return;
+   }
 
   // 4. Mudar status dos arquivos
   h->status = '0';
@@ -82,20 +87,12 @@ void remover_registro(){
         RegistroDado *r = ler_reg_dado_bin(arqBin);
 
         if (r != NULL && r->removido == '0') { // se existir o registro
-          // marcar como removido temporariamente no arq para a busca não o encontrar
-          fseek(arqBin, byteOffSet, SEEK_SET);
-          char flagRemovido = '1';
-          fwrite(&flagRemovido, sizeof(char), 1, arqBin);
 
           // verificar se a estação que estamos apagando era a última ativa com esse nome
-          if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnRemovido)) {
-            h->nroEstacoes--; 
-          }
+          if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnRemovido)) h->nroEstacoes--;
 
           // vrificar se esse par era o último ativo
-          if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnRemovido)) {
-            h->nroParesEstacoes--;
-          }
+          if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnRemovido)) h->nroParesEstacoes--;
 
           // salva dados da remoção
           r->removido = '1';     
@@ -122,8 +119,6 @@ void remover_registro(){
   }
 
   // 8. Salvar os dados nos arquivos binários
-
-
   // salvando o status do arquivo binário
   h->status = '1';
   escreve_reg_cab_bin(arqBin, h);
@@ -137,9 +132,7 @@ void remover_registro(){
   escreve_reg_cab_ind(arqInd, hInd);
 
   // salvando a lista da RAM
-  for (int i = 0; i < nRegistrosIndice; i++){
-    if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
-  }
+  reescrita(arqInd, listaIndice, nRegistrosIndice); 
 
   // 9. Liberações de memória e fechamento
   free(listaIndice);
