@@ -74,19 +74,17 @@ void remover_registro(){
   // 5. Loop para a quant de remoções que serão feitas
   for (int i = 0; i < nRemocoes; i++){
     int posSequencial = 17; // para busca - inicia após cabeçalho
-    int rrnRemovido; // guardar qual vai remover
+    RegistroDado *r = NULL; // ponteiro para receber o resultado do reg removido
 
     // 6. Realizando a busca do RRN que quero remover
-    while ((rrnRemovido = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial)) != -1){
+    while ((r = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial)) != NULL){
+      // acabou de ser lido, então dá p/ calcular
+      int byteOffSet = ftell(arqBin) - 80;
+      int rrnRemovido = (byteOffSet - 17) / 80;
+
       if (rrnRemovido < h->proxRRN){
         // 7. Se existir, fazer a remoção lógica 
-        int byteOffSet = 80 * rrnRemovido + 17;
-        fseek(arqBin, byteOffSet, SEEK_SET);
-
-        // leitura do registro de dados
-        RegistroDado *r = ler_reg_dado_bin(arqBin);
-
-        if (r != NULL && r->removido == '0') { // se existir o registro
+        if (r->removido == '0') { // se existir o registro
 
           // verificar se a estação que estamos apagando era a última ativa com esse nome
           if (!existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnRemovido)) h->nroEstacoes--;
@@ -127,12 +125,12 @@ void remover_registro(){
   fclose(arqInd); // fecha o primeiro fluxo de rb+
   arqInd = fopen(nomeArqInd, "wb"); // abre de novo para só escrita
 
+  // salvando a lista da RAM
+  reescrita(arqInd, listaIndice, nRegistrosIndice); 
+
   // salvando o status do arquivo de índice
   hInd->status = '1';
   escreve_reg_cab_ind(arqInd, hInd);
-
-  // salvando a lista da RAM
-  reescrita(arqInd, listaIndice, nRegistrosIndice); 
 
   // 9. Liberações de memória e fechamento
   free(listaIndice);

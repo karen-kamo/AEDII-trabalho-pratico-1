@@ -242,6 +242,9 @@ RegistroDadoIndice *carregamento (char *nomeArqInd, int *nRegistros){
 //////////////////////////////////////////
 
 void reescrita(FILE *arqInd, RegistroDadoIndice *listaIndice, int nRegistrosIndice){
+  // movendo o ponteiro para depois do cabeçalho
+  fseek(arqInd, 1, SEEK_SET);
+
   for (int i = 0; i < nRegistrosIndice; i++){
       if (listaIndice[i].RRN != -1) escreve_reg_dado_ind(arqInd, &listaIndice[i]);
    }

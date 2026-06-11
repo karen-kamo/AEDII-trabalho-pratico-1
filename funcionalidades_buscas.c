@@ -277,24 +277,18 @@ void busca_indexada(){
   // loop para buscar de acordo com a quantidade desejada
   for (int i = 0; i < quantBusca; i++){
     int posSequencial = 17; // pula o registro de cabeçalho
-    int rrnEncontrado;
     int flagEncontrou = 0;
+    RegistroDado *rEncontrado = NULL; // ponteiro para receber o resultado
 
     // enquanto existir um rrn válido (p/ buscas com vários resultados)
-    while ((rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial)) != -1){
+    while ((rEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial)) != NULL){
       flagEncontrou = 1;
 
-      // calculando o byteOffSet p/ pegar registro
-      int byteOffSet = 80 * rrnEncontrado + 17;
-      fseek(arqBin, byteOffSet, SEEK_SET);
-      RegistroDado *r = ler_reg_dado_bin(arqBin);
-
-      if (r != NULL) { // se algo deu errado
-        // 5. Imprime, caso exista
-        imprimir_reg_dado(r);
-        free_reg_dado(r);
-        free(r);
-      }
+      // 5. Imprime, caso exista
+      imprimir_reg_dado(rEncontrado);
+      free_reg_dado(rEncontrado);
+      free(rEncontrado);
+      
 
       // se busca por codEstacao, não precisa continuar
       if (posSequencial == 17) break;
@@ -313,7 +307,7 @@ void busca_indexada(){
 }
 
 
-int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial){
+RegistroDado *executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial){
   // foi usado static p/ os valores ficarem guardados após fazer várias buscar
   static int quantPar;
   // arrays para guardar os dados que devem ser filtrados
@@ -353,32 +347,31 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
 
     if (rrnBuscado != -1){ // achou um rrn
       // verificando se esse RRN é válido
-      if (rrnBuscado >= h->proxRRN || rrnBuscado < 0) return -1;
+      if (rrnBuscado >= h->proxRRN || rrnBuscado < 0) return NULL;
 
       int byteOffSet = 80 * rrnBuscado + 17; // calculando o byte que deve ser buscado
       fseek(arqBin, byteOffSet, SEEK_SET);
 
       RegistroDado *r = ler_reg_dado_bin(arqBin);
-      if (r == NULL) return -1; // se algo deu errado
+      if (r == NULL) return NULL; // se algo deu errado
       
       // verificando se o registro está logicamente removido
       if (r->removido == '1'){
         free_reg_dado(r);
         free(r);
-        return -1;
+        return NULL;
       } 
       
       // verificando nos outros campos buscados
       if (verificacao_filtros(r, nomesCampos, valoresCampos, quantPar)){
-        free_reg_dado(r);
-        free(r);
-        return rrnBuscado;
+        filtroCod = 0; // p/ próxima chamada, já saber que já foi
+        return r;
       }
 
       free_reg_dado(r);
       free(r);
     } 
-    return -1; // não achou registro
+    return NULL; // não achou registro
   } 
   
   else { // se não, faz busca sequencial
@@ -387,11 +380,7 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
 
     // fazer busca até o final do arquivo
     while (check_eof(arqBin)){
-      long posicaoAntes = ftell(arqBin); // guarda qual era a posição atual antes
-      int rrnCalculado = (posicaoAntes - 17) / 80;
-
       RegistroDado *r = ler_reg_dado_bin(arqBin);
-
       if (r == NULL) break; // caso falte memória
 
       // verificando se o registro está logicamente removido
@@ -404,15 +393,13 @@ int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndic
       
       if(verificacao_filtros(r, nomesCampos, valoresCampos, quantPar)){
         *posSequencial = ftell(arqBin); // atualiza a pos p/ salvar onde parou
-        free_reg_dado(r);
-        free(r);
-        return rrnCalculado;
+        return r;
       }
 
       free_reg_dado(r);
       free(r);
     }
 
-    return -1; // se não achou
+    return NULL; // se não achou
   }
 }

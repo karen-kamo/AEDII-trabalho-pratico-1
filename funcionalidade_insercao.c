@@ -184,12 +184,12 @@ void inserir_registro() {
    fclose(arqInd); // fecha o primeiro fluxo de rb+
    arqInd = fopen(nomeArqIndice, "wb"); // abre de novo para só escrita
 
+   // salvando a lista da RAM
+   reescrita(arqInd, listaIndice, nRegistrosIndice); 
+
    // salvando o status do arquivo de índice
    hInd->status = '1';
-   escreve_reg_cab_ind(arqInd, hInd);
-
-   // salvando a lista da RAM
-   reescrita(arqInd, listaIndice, nRegistrosIndice);  
+   escreve_reg_cab_ind(arqInd, hInd); 
 
    // 10. Liberações de memória e fechamento
    free(listaIndice);

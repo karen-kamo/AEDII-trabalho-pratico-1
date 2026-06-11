@@ -76,11 +76,11 @@ void atualizar_registro() {
    // 5. Loop para rodar a quant de vezes que usuário quer alterar
    for (int i = 0; i < nAtualizacoes; i++){ 
       // 6. Fazer a busca pelos campos e valores desejados
-      fseek(arqBin, 17, SEEK_SET); // aponta para os regs de dados
       int posSequencial = 17; // p/ fazer a busca
+      RegistroDado *r = NULL; // ponteiro para receber o resultado do reg buscado
 
       // função para fazer a busca  
-      int rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
+      r = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
      
       // 7. Guardar campo e valor que usuário quer alterar
       int quantAlt; // quant de pares para serem alterados
@@ -110,12 +110,11 @@ void atualizar_registro() {
          else if (strcmp(nomeCampoNew[j], "codProxEstacao") == 0)flagPar = 1;
       }
 
-      while (rrnEncontrado != -1){ // se ainda tiver registro válido
-         if (rrnEncontrado < h->proxRRN){
-            int byteOffSet = 80 * rrnEncontrado + 17;
-            fseek(arqBin, byteOffSet, SEEK_SET); // vai p/ reg que deve mudar
-            RegistroDado *r = ler_reg_dado_bin(arqBin);
+      while (r != NULL){ // se ainda tiver registro válido
+         int byteOffSet = ftell(arqBin) - 80; // como leu agora pouco, sabe o byte
+         int rrnIgnorado = (byteOffSet - 17) / 80;
 
+         if (rrnIgnorado < h->proxRRN){
             if (r->removido == '0'){
                // 8. Verificar mudança no Registro de Cabeçalho
 
@@ -137,48 +136,48 @@ void atualizar_registro() {
                // verificação do nroEstacoes
                if (flagNomeUnico){
                   // se não tiver nenhum outro registro com o mesmo nome, deve decrementar
-                  if (r->nomeEstacao != NULL && !existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnEncontrado)) h->nroEstacoes--;
+                  if (r->nomeEstacao != NULL && !existe_nome_estacao(arqBin, h, r->nomeEstacao, rrnIgnorado)) h->nroEstacoes--;
 
                   // se é um novo nome, deve incrementar
-                  if (novoNomeEstacao != NULL && !existe_nome_estacao(arqBin, h, novoNomeEstacao, rrnEncontrado)) h->nroEstacoes++;
+                  if (novoNomeEstacao != NULL && !existe_nome_estacao(arqBin, h, novoNomeEstacao, rrnIgnorado)) h->nroEstacoes++;
                }
 
                // verificação do nroParesEstacoes
                if (flagCod || flagPar) {
                   // se era um par que não existia em mais nenhum, decrementa
-                  if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnEncontrado)) h->nroParesEstacoes--;
+                  if (r->codProxEstacao != -1 && !existe_par(arqBin, h, r->codEstacao, r->codProxEstacao, rrnIgnorado)) h->nroParesEstacoes--;
 
                   // se é um novo par, incrementa
-                  if (novoCodProxEstacao != -1 && !existe_par(arqBin, h, novoCodEstacao, novoCodProxEstacao, rrnEncontrado)) h->nroParesEstacoes++;
+                  if (novoCodProxEstacao != -1 && !existe_par(arqBin, h, novoCodEstacao, novoCodProxEstacao, rrnIgnorado)) h->nroParesEstacoes++;
                }
 
                // 9. Atualização no registro de dados
                for (int b = 0; b < quantAlt; b++) {
                   // atualizar o codEstacao
                   if (strcmp(nomeCampoNew[b], "codEstacao") == 0) {
-                        int novoCod = verificar_nulo(valorCampoNew[b]); 
-                        
-                        // procura o código antigo no índice e atualiza com o novo
-                        int posNoIndice = busca_binaria_posicao_lista_indice(listaIndice, nRegistrosIndice, r->codEstacao);
+                     int novoCod = verificar_nulo(valorCampoNew[b]); 
+                     
+                     // procura o código antigo no índice e atualiza com o novo
+                     int posNoIndice = busca_binaria_posicao_lista_indice(listaIndice, nRegistrosIndice, r->codEstacao);
 
-                        //se for igual a -1 não achou o indice do codEstacao
-                        if (posNoIndice != -1) listaIndice[posNoIndice].codEstacao = novoCod; //atualiza a lista que esta na RAM
+                     //se for igual a -1 não achou o indice do codEstacao
+                     if (posNoIndice != -1) listaIndice[posNoIndice].codEstacao = novoCod; //atualiza a lista que esta na RAM
 
-                        r->codEstacao = novoCod; //atualiza na Struct/Registro de Dados
+                     r->codEstacao = novoCod; //atualiza na Struct/Registro de Dados
                   }
 
                   // atualizar o nomeEstacao
                   else if (strcmp(nomeCampoNew[b], "nomeEstacao") == 0) {
-                        // precisamos dar free para não causar vazamento de memória
-                        free(r->nomeEstacao); // limpa o nome antigo
-                        if (strcmp(valorCampoNew[b], "NULO") == 0) { //Caso o usuário digite "NULO" 
-                           r->nomeEstacao = NULL;
-                           r->tamNomeEstacao = 0;
-                        } else {
-                           r->nomeEstacao = malloc((strlen(valorCampoNew[b]) + 1) * sizeof(char)); //Alocação dinâmica para a nova string
-                           strcpy(r->nomeEstacao, valorCampoNew[b]); //Copia para dentro do Registro de Dados
-                           r->tamNomeEstacao = strlen(valorCampoNew[b]); //Pega o tamanho da string fornecida pelo usuário
-                        }
+                     // precisamos dar free para não causar vazamento de memória
+                     free(r->nomeEstacao); // limpa o nome antigo
+                     if (strcmp(valorCampoNew[b], "NULO") == 0) { //Caso o usuário digite "NULO" 
+                        r->nomeEstacao = NULL;
+                        r->tamNomeEstacao = 0;
+                     } else {
+                        r->nomeEstacao = malloc((strlen(valorCampoNew[b]) + 1) * sizeof(char)); //Alocação dinâmica para a nova string
+                        strcpy(r->nomeEstacao, valorCampoNew[b]); //Copia para dentro do Registro de Dados
+                        r->tamNomeEstacao = strlen(valorCampoNew[b]); //Pega o tamanho da string fornecida pelo usuário
+                     }
                   }
 
                   // atualizar o codLinha
@@ -186,15 +185,15 @@ void atualizar_registro() {
 
                   // atualizar o nomeLinha 
                   else if (strcmp(nomeCampoNew[b], "nomeLinha") == 0) {
-                        free(r->nomeLinha); 
-                        if (strcmp(valorCampoNew[b], "NULO") == 0) {
-                           r->nomeLinha = NULL;
-                           r->tamNomeLinha = 0;
-                        } else {
-                           r->nomeLinha = malloc((strlen(valorCampoNew[b]) + 1) * sizeof(char));
-                           strcpy(r->nomeLinha, valorCampoNew[b]);
-                           r->tamNomeLinha = strlen(valorCampoNew[b]);
-                        }
+                     free(r->nomeLinha); 
+                     if (strcmp(valorCampoNew[b], "NULO") == 0) {
+                        r->nomeLinha = NULL;
+                        r->tamNomeLinha = 0;
+                     } else {
+                        r->nomeLinha = malloc((strlen(valorCampoNew[b]) + 1) * sizeof(char));
+                        strcpy(r->nomeLinha, valorCampoNew[b]);
+                        r->tamNomeLinha = strlen(valorCampoNew[b]);
+                     }
                   }
 
                   // atualizar o codProxEstacao
@@ -226,7 +225,7 @@ void atualizar_registro() {
          if (posSequencial == 17) break; 
 
          // se busca por outro campo, continua procurando
-         rrnEncontrado = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
+         r = executar_busca_indexada(listaIndice, nRegistrosIndice, h, arqBin, &posSequencial);
       }
    } 
 
@@ -243,12 +242,12 @@ void atualizar_registro() {
    fclose(arqInd); // fecha o primeiro fluxo de rb+
    arqInd = fopen(nomeArqIndice, "wb"); // abre de novo para só escrita
 
+   // salvando a lista da RAM
+   reescrita(arqInd, listaIndice, nRegistrosIndice); 
+   
    // salvando o status do arquivo de índice
    hInd->status = '1';
    escreve_reg_cab_ind(arqInd, hInd);
-
-   // salvando a lista da RAM
-   reescrita(arqInd, listaIndice, nRegistrosIndice); 
 
    // 12. Liberações de memória e fechamento
    free(listaIndice);

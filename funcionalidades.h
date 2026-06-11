@@ -86,9 +86,9 @@ void atualizar_registro();
  * 
  * @param posSequencial A posição atual para realizar a busca no arquivo binário.
  * 
- * @return Retorna RRN do registro buscado ou -1 se não tiver registro correspondente.
+ * @return Retorna o registro buscado ou NULL se não tiver registro correspondente.
  */
-int executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial);
+RegistroDado *executar_busca_indexada(RegistroDadoIndice *listaIndice, int nRegistrosIndice, RegistroCabecalho *h, FILE *arqBin, int *posSequencial);
 
 
 
